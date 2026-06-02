@@ -1,0 +1,25 @@
+*
+!.vscode
+!.vscode/**
+.vscode/launch.json
+.vscode/settings.json
+
+!doc
+!doc/**
+doc/ft_nm\ 3.6.pdf
+
+!images
+!images/**
+
+!inc
+!inc/**
+
+!src
+!src/**
+
+!Makefile
+!.gitignore
+!README.md
+!README_es.md
+!LICENSE
+!leaks
