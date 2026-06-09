@@ -33,7 +33,7 @@ NAME		= ft_nm
 # ─────────── #
 
 CC			= clang
-CFLAGS		= -Wall -Wextra -Werror -O2
+CFLAGS		= -Wall -Wextra -Werror -g
 
 # ───────────────── #
 # ── DIRECTORIES ── #
@@ -48,7 +48,12 @@ SRC_DIR		= src/
 # ── FILES ── #
 # ─────────── #
 
-SRCS		= main.c
+SRCS		= main/main.c			\
+			  main/options.c		\
+			  main/error.c			\
+			  utils/ft_dprintf.c	\
+			  utils/getopt.c		\
+			  utils/utils.c			\
 
 # ───────────────────────────────────────────────────────────── #
 # ─────────────────────────── RULES ─────────────────────────── #
