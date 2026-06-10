@@ -3,7 +3,7 @@
 
 #pragma region "Includes"
 
-	#define NAME "ft_nm"
+	#include <stddef.h>
 
 #pragma endregion
 
@@ -37,11 +37,19 @@
 		int		undefined_only;				// -u
 		int		defined_only;  				// -U
 		int		no_weak;       				// -W
-		int		argc;						// Total files
-		char	**argv;						// Files
 	} t_options;
 
+	typedef struct s_elf {
+		char	*file;						// 
+		int		fd;							// 
+		size_t 	size;						// 
+		void	*map;						// 
+		int		bits;						// x32 / x64
+	} t_elf;
+
 	typedef struct s_nm {
+		t_elf		*elf;					// 
+		int			elf_total;				// 
 		int			error;					// Error type
 		t_options	options;				// Options
 	} t_nm;
@@ -57,6 +65,7 @@
 #pragma region "Methods"
 
 	int	options(int argc, char **argv);
-	int	exit_error(int error_type, int exit_code, char *value1, char *value2, int free_mode, int exit_mode);
+
+	int	load_file(t_elf *elf);
 
 #pragma endregion

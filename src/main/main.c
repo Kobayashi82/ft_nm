@@ -1,8 +1,10 @@
 
 #pragma region "Includes"
 
-	#include "main/nm.h"
-	#include "utils/utils.h"
+	#include "nm.h"
+	#include "utils.h"
+
+	#include <stdlib.h>
 
 #pragma endregion
 
@@ -16,9 +18,20 @@
 
 	int main(int argc, char **argv) {
 		int ret = options(argc, argv);
-		if (ret) return (ret == E_END) ? 0 : ret;
 
-		return (exit_error(E_END, ret, NULL, NULL, EE_FREE_NONE, EE_EXIT));
+		if (!ret) {
+			for (int i = 0; i < g_nm.elf_total; ++i) {
+				int error = 0;
+				error = load_file(&g_nm.elf[i]);
+				// if (!error) algo();
+				// if (!error) algo();
+				if (error) ret++;
+				free(g_nm.elf[i].file);
+			}
+			free(g_nm.elf);
+		}
+
+		return (ret);
 	}
 
 #pragma endregion

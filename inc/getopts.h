@@ -5,6 +5,8 @@
 
 	#include <stddef.h>
 
+	#define NAME "ft_nm"
+
 #pragma endregion
 
 #pragma region "Enumeratos"

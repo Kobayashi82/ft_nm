@@ -1,9 +1,12 @@
 
 #pragma region "Includes"
 
-	#include "main/nm.h"
-	#include "utils/utils.h"
-	#include "utils/getopt.h"
+	#include "nm.h"
+	#include "utils.h"
+	#include "getopts.h"
+
+	#include <unistd.h>
+	#include <stdlib.h>
 
 #pragma endregion
 
@@ -65,18 +68,10 @@
 
 		t_parse_result *result = parse_options(argc, argv, "aADgnpruUWhv", NULL, long_opts, "ft_nm [option(s)] [file(s)]", IGNORE_OFF);
 		if (!result) return (free_options(result), (g_nm.error == E_OPT_MAX || g_nm.error == E_OPT_INVALID) ? 2 : 1);
-
 		if (find_long_option(result, "help")	|| has_option(result, 'h', 0))	return (free_options(result), help());
 		if (find_long_option(result, "version")	|| has_option(result, 'v', 0))	return (free_options(result), version());
 
 		int ret = 0;
-
-		if (result->argc) {
-			g_nm.options.argc = result->argc;
-			g_nm.options.argv = result->argv;
-			result->argc = 0;
-			result->argv = NULL;
-		}
 
 		g_nm.options.debug_syms		= has_option(result, 'a', 0);
 		g_nm.options.print_filename	= has_option(result, 'A', 0);
@@ -88,6 +83,41 @@
 		g_nm.options.undefined_only	= has_option(result, 'u', 0);
 		g_nm.options.defined_only	= has_option(result, 'U', 0);
 		g_nm.options.no_weak		= has_option(result, 'W', 0);
+
+		if (!result->argc) {
+			g_nm.elf_total = 1;
+			g_nm.elf = malloc(g_nm.elf_total * sizeof(t_elf));
+			char *file = ft_strdup("a.out");
+			if (!g_nm.elf || !file) {
+				g_nm.error = E_NO_MEMORY;
+				free(g_nm.elf);
+				free(file);
+				ret = 1;
+			} else {
+				g_nm.elf[0].file = file;
+				g_nm.elf[0].fd = -1;
+				g_nm.elf[0].size = 0;
+				g_nm.elf[0].map = NULL;
+				g_nm.elf[0].bits = 0;
+			}
+		} else {
+			g_nm.elf_total = result->argc;
+			g_nm.elf = malloc(g_nm.elf_total * sizeof(t_elf));
+			if (!g_nm.elf) {
+				g_nm.error = E_NO_MEMORY;
+				free(g_nm.elf);
+				ret = 1;
+			} else {
+				for (int i = 0; i < result->argc; ++i) {
+					g_nm.elf[i].file = result->argv[i];
+					result->argv[i] = NULL;
+					g_nm.elf[i].fd = -1;
+					g_nm.elf[i].size = 0;
+					g_nm.elf[i].map = NULL;
+					g_nm.elf[i].bits = 0;
+				}
+			}
+		}
 
 		return (free_options(result), ret);
 	}

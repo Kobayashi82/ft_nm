@@ -50,7 +50,10 @@ SRC_DIR		= src/
 
 SRCS		= main/main.c			\
 			  main/options.c		\
-			  main/error.c			\
+			  main/output.c			\
+			  elf/elf.c				\
+			  elf/sections.c		\
+			  elf/symbols.c			\
 			  utils/ft_dprintf.c	\
 			  utils/getopt.c		\
 			  utils/utils.c			\

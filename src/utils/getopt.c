@@ -1,9 +1,12 @@
 
 #pragma region "Includes"
 
-	#include "main/nm.h"
-	#include "utils/utils.h"
-	#include "utils/getopt.h"
+	#include "nm.h"
+	#include "utils.h"
+	#include "getopts.h"
+
+	#include <unistd.h>
+	#include <stdlib.h>
 
 	#define MAX_OPTIONS	128
 
@@ -64,7 +67,7 @@
 				if (!long_opts || !name) return (NULL);
 
 				for (int i = 0; long_opts[i].name; ++i) {
-					if (!strncmp(long_opts[i].name, name, len) && long_opts[i].name[len] == '\0') return (&long_opts[i]);
+					if (!ft_strncmp(long_opts[i].name, name, len) && long_opts[i].name[len] == '\0') return (&long_opts[i]);
 				}
 
 				return (NULL);
@@ -78,7 +81,7 @@
 				if (opt_count >= MAX_OPTIONS) return (g_nm.error = E_OPT_MAX, 1);
 
 				const char	*arg = argv[*idx] + 2;
-				const char	*equals = strchr(arg, '=');
+				const char	*equals = ft_strchr(arg, '=');
 
 				// Find long option
 				size_t name_len = (equals) ? (size_t)(equals - arg) : ft_strlen(arg);
@@ -173,7 +176,7 @@
 			static int get_short_type(const char *short_opts, char opt) {
 				if (!short_opts) return (0);						// Not Required
 
-				const char *pos = strchr(short_opts, opt);
+				const char *pos = ft_strchr(short_opts, opt);
 				if (!pos) return (-1);								// Invalid
 
 				if (pos[1] == '.')					return (3);		// Optional (support arg separated)
@@ -251,7 +254,7 @@
 							i = ft_strlen(arg) - 1;
 						} else if (*idx + 1 < argc) {
 							char *next = argv[*idx + 1];
-							if (strcmp(next, "--") && strcmp(next, "-") && strcmp(next, "+") && next[0] != '-' && next[0] != '+') {
+							if (ft_strcmp(next, "--") && ft_strcmp(next, "-") && ft_strcmp(next, "+") && next[0] != '-' && next[0] != '+') {
 								// -a value
 								(*idx)++;
 								value = ft_strdup(argv[*idx]);
@@ -285,7 +288,7 @@
 				if (!result || !name) return (NULL);
 
 				for (t_opt_value *curr = result->options; curr; curr = curr->next) {
-					if (curr->is_long && curr->long_name && !strcmp(curr->long_name, name)) return (curr);
+					if (curr->is_long && curr->long_name && !ft_strcmp(curr->long_name, name)) return (curr);
 				}
 
 				return (NULL);
@@ -299,7 +302,7 @@
 				if (!result || !name) return (0);
 
 				for (t_opt_value *curr = result->options; curr; curr = curr->next) {
-					if (curr->is_long && curr->long_name && !strcmp(curr->long_name, name)) return (1);
+					if (curr->is_long && curr->long_name && !ft_strcmp(curr->long_name, name)) return (1);
 				}
 
 				return (0);
@@ -366,14 +369,14 @@
 			g_nm.error = 0;
 			t_parse_result *result = malloc(sizeof(t_parse_result));
 			if (!result) {
-				exit_error(E_NO_MEMORY, 1, argv[0], NULL, EE_FREE_NONE, EE_RETURN);
+				ft_dprintf(STDERR_FILENO, NAME": memory allocation failed\n");
 				return (g_nm.error = E_NO_MEMORY, NULL);
 			}
 			ft_memset(result, 0, sizeof(t_parse_result));
 
 			char **tmp_args = malloc(argc * sizeof(char*));
 			if (!tmp_args) {
-				exit_error(E_NO_MEMORY, 1, argv[0], NULL, EE_FREE_NONE, EE_RETURN);
+				ft_dprintf(STDERR_FILENO, NAME": memory allocation failed\n");
 				free_options(result);
 				return (g_nm.error = E_NO_MEMORY, NULL);
 			}
@@ -408,7 +411,7 @@
 				const char *arg = argv[i];
 
 				// End of options '--'
-				if (!strcmp(arg, "--")) {
+				if (!ft_strcmp(arg, "--")) {
 					result->double_dash = 1;
 					done_with_opts = 1;
 					continue;
@@ -472,8 +475,8 @@
 			}
 
 			if (g_nm.error) {
-				if (g_nm.error == E_NO_MEMORY)	exit_error(E_NO_MEMORY, 1, argv[0], NULL,                 EE_FREE_NONE, EE_RETURN);
-				if (g_nm.error == E_OPT_MAX)	exit_error(E_OPT_MAX,   2, argv[0], ft_itoa(MAX_OPTIONS), EE_FREE_VAL2, EE_RETURN);
+				if (g_nm.error == E_NO_MEMORY)	ft_dprintf(STDERR_FILENO, NAME": memory allocation failed\n");
+				if (g_nm.error == E_OPT_MAX)	ft_dprintf(STDERR_FILENO, NAME": Too many options\n");
 				if (tmp_args) {
 					for (int i = 0; tmp_args[i]; ++i)
 						free(tmp_args[i]);
