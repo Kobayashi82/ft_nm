@@ -41,10 +41,9 @@
 	} t_options;
 
 	typedef struct s_symbol {
-		uint64_t		value;				// 
-		int				has_value;			// 
 		char			type;				// 
 		char			*name;				// 
+		uint64_t		value;				// 
 		struct s_symbol	*next;				// 
 	} t_symbol;
 

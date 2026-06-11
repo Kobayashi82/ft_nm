@@ -8,15 +8,19 @@
 
 #pragma region "Compare"
 
+	static int	is_undefined(t_symbol *s) {
+		return (s->type == 'U' || s->type == 'u' || s->type == 'w' || s->type == 'v');
+	}
+
 	static int cmp_by_name(t_symbol *a, t_symbol *b) {
 		return (ft_strcmp(a->name, b->name));
 	}
 
 	static int cmp_by_value(t_symbol *a, t_symbol *b) {
-		if (!a->has_value && !b->has_value)	return (ft_strcmp(a->name, b->name));
-		if (!a->has_value)					return (-1);
-		if (!b->has_value)					return (1);
-		if (a->value > b->value)			return (1);
+		if (is_undefined(a) && is_undefined(b))	return (ft_strcmp(a->name, b->name));
+		if (is_undefined(a))					return (-1);
+		if (is_undefined(b))					return (1);
+		if (a->value > b->value)				return (1);
 
 		return (0);
 	}
