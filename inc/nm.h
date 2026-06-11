@@ -4,6 +4,7 @@
 #pragma region "Includes"
 
 	#include <stddef.h>
+	#include <stdint.h>
 
 #pragma endregion
 
@@ -39,6 +40,14 @@
 		int		no_weak;       				// -W
 	} t_options;
 
+	typedef struct s_symbol {
+		uint64_t		value;				// 
+		int				has_value;			// 
+		char			type;				// 
+		char			*name;				// 
+		struct s_symbol	*next;				// 
+	} t_symbol;
+
 	typedef struct s_elf {
 		char	*file;						// 
 		int		fd;							// 
@@ -64,8 +73,13 @@
 
 #pragma region "Methods"
 
+	// Main
 	int	options(int argc, char **argv);
 
+	// Elf
 	int	load_file(t_elf *elf);
+
+	// Output
+	t_symbol *merge_sort(t_symbol *head, int by_value);
 
 #pragma endregion
