@@ -2,7 +2,6 @@
 #pragma region "Includes"
 
 	#include "nm.h"
-	#include "utils.h"
 
 	#include <stdlib.h>
 
@@ -14,24 +13,56 @@
 
 #pragma endregion
 
+#pragma region "Process"
+
+	// Procesa cada archivo y sus miembros (si es un 'Archive')
+	static int process(t_file *file) {
+		if (!file || !file->path) return (1);
+
+		int error = map_file(file);
+
+		if (!error) {
+			t_elf *current = file->elf;
+			while (current) {
+				current->error = validate(current, current->name);
+
+				if (!current->error) {
+					current->symbol = malloc(sizeof(t_sym));
+					current->symbol->name = "algo";
+					current->symbol->type = 'K';
+					current->symbol->value = 12345;
+					current->symbol->next = NULL;
+				}
+
+				if (current->error && file->type == ELF) error = 1;
+
+				current = current->next;
+			}
+
+			print_file(file);
+		}
+
+		unmap_file(file);
+
+		return (error);
+	}
+
+#pragma endregion
+
 #pragma region "Main"
 
 	int main(int argc, char **argv) {
 		int ret = options(argc, argv);
 
 		if (!ret) {
-			for (int i = 0; i < g_nm.elf_total; ++i) {
-				int error = 0;
-				error = load_file(&g_nm.elf[i]);
-				// if (!error) algo();
-				// if (!error) algo();
-				if (error) ret++;
-				free(g_nm.elf[i].file);
+			for (int i = 0; i < g_nm.file_total; ++i) {
+				ret += process(&g_nm.file[i]);
+				free(g_nm.file[i].path);
 			}
-			free(g_nm.elf);
+			free(g_nm.file);
 		}
 
-		return (ret);
+		return ((ret == -1) ? 0 : ret);
 	}
 
 #pragma endregion

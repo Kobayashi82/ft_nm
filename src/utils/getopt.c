@@ -12,6 +12,12 @@
 
 #pragma endregion
 
+#pragma region "Variables"
+
+	static int g_error;
+
+#pragma endregion
+
 #pragma region "Internal"
 
 	#pragma region "Common"
@@ -20,7 +26,7 @@
 
 			static t_opt_value *create_opt_value(char opt, const char *value, int is_long, const char *long_name, int is_plus) {
 				t_opt_value *node = malloc(sizeof(t_opt_value));
-				if (!node) return (g_nm.error = E_NO_MEMORY, NULL);
+				if (!node) return (g_error = E_NO_MEMORY, NULL);
 				ft_memset(node, 0, sizeof(t_opt_value));
 
 				node->opt = opt;
@@ -31,7 +37,7 @@
 					free(node->value);
 					free(node->long_name);
 					free(node);
-					return (g_nm.error = E_NO_MEMORY, NULL);
+					return (g_error = E_NO_MEMORY, NULL);
 				}
 				node->is_long = is_long;
 				node->next = NULL;
@@ -78,7 +84,7 @@
 		#pragma region "Parse Long"
 
 			static int parse_long_option(t_parse_result *result, char **argv, int *idx, int argc, const t_long_option *long_opts, int silent_mode, int opt_count) {
-				if (opt_count >= MAX_OPTIONS) return (g_nm.error = E_OPT_MAX, 1);
+				if (opt_count >= MAX_OPTIONS) return (g_error = E_OPT_MAX, 1);
 
 				const char	*arg = argv[*idx] + 2;
 				const char	*equals = ft_strchr(arg, '=');
@@ -91,7 +97,7 @@
 						ft_dprintf(STDERR_FILENO, NAME": --: invalid option\n");
 						ft_dprintf(STDERR_FILENO, NAME": usage: %s\n", result->usage);
 					}
-					return (g_nm.error = E_OPT_INVALID, 1);
+					return (g_error = E_OPT_INVALID, 1);
 				}
 
 				char *value = NULL;
@@ -100,25 +106,25 @@
 					if (equals) {
 						// --option=value
 						value = ft_strdup(equals + 1);
-						if (!value) return (g_nm.error = E_NO_MEMORY, 1);
+						if (!value) return (g_error = E_NO_MEMORY, 1);
 					} else if (*idx + 1 < argc) {
 						// --option value
 						(*idx)++;
 						value = ft_strdup(argv[*idx]);
-						if (!value) return (g_nm.error = E_NO_MEMORY, 1);
+						if (!value) return (g_error = E_NO_MEMORY, 1);
 					} else {
 						// Missing Argument
 						if (!silent_mode) {
 							ft_dprintf(STDERR_FILENO, NAME": --%s: option requires an argument\n", opt->name);
 							ft_dprintf(STDERR_FILENO, NAME": usage: %s\n", result->usage);
 						}
-						return (g_nm.error = E_OPT_NO_ARGUMENT, 1);
+						return (g_error = E_OPT_NO_ARGUMENT, 1);
 					}
 				} else if (opt->has_arg == OPTIONAL_ARG) {
 					if (equals) {
 						// --option=value	(If there is no '=', the optional argument is not taken from the next argv)
 						value = ft_strdup(equals + 1);
-						if (!value) return (g_nm.error = E_NO_MEMORY, 1);
+						if (!value) return (g_error = E_NO_MEMORY, 1);
 					}
 				} else if (opt->has_arg == NO_ARGUMENT) {
 					if (equals) {
@@ -126,7 +132,7 @@
 							ft_dprintf(STDERR_FILENO, NAME": --%s: doesn't allow an argument\n", arg);
 							ft_dprintf(STDERR_FILENO, NAME": usage: %s\n", result->usage);
 						}
-						return (g_nm.error = E_OPT_ARGUMENT, 1);
+						return (g_error = E_OPT_ARGUMENT, 1);
 					}
 				}
 
@@ -194,7 +200,7 @@
 				const char	*arg = argv[*idx] + 1;
 
 				for (int i = 0; arg[i]; ++i) {
-					if (opt_count++ >= MAX_OPTIONS) return (g_nm.error = E_OPT_MAX, 1);										// Note: max_option error may trigger even when the option is an argument in ignore_mode = 2
+					if (opt_count++ >= MAX_OPTIONS) return (g_error = E_OPT_MAX, 1);										// Note: max_option error may trigger even when the option is an argument in ignore_mode = 2
 
 					char opt = arg[i];
 					int arg_type = get_short_type(short_opts, opt);
@@ -214,7 +220,7 @@
 							else			ft_dprintf(STDERR_FILENO, NAME": -%s: invalid option\n", utf8_char);
 							ft_dprintf(STDERR_FILENO, NAME": usage: %s\n", result->usage);
 						}
-						return (g_nm.error = E_OPT_INVALID, 1);
+						return (g_error = E_OPT_INVALID, 1);
 					}
 
 					char *value = NULL;
@@ -223,13 +229,13 @@
 						if (arg[i + 1]) {
 							// -avalue
 							value = ft_strdup(arg + i + 1);
-							if (!value) return (g_nm.error = E_NO_MEMORY, 1);
+							if (!value) return (g_error = E_NO_MEMORY, 1);
 							i = ft_strlen(arg) - 1;
 						} else if (*idx + 1 < argc) {
 							// -a value
 							(*idx)++;
 							value = ft_strdup(argv[*idx]);
-							if (!value) return (g_nm.error = E_NO_MEMORY, 1);
+							if (!value) return (g_error = E_NO_MEMORY, 1);
 						} else {
 							// Missing Argument
 							if (!silent_mode) {
@@ -237,20 +243,20 @@
 								ft_dprintf(STDERR_FILENO, NAME": -%s: option requires an argument\n", buff);
 								ft_dprintf(STDERR_FILENO, NAME": usage: %s\n", result->usage);
 							}
-							return (g_nm.error = E_OPT_NO_ARGUMENT, 1);
+							return (g_error = E_OPT_NO_ARGUMENT, 1);
 						}
 					} else if (arg_type == OPTIONAL_ARG) {
 						if (arg[i + 1]) {
 							// -avalue		(Don't take the next argv for optional arguments)
 							value = ft_strdup(arg + i + 1);
-							if (!value) return (g_nm.error = E_NO_MEMORY, 1);
+							if (!value) return (g_error = E_NO_MEMORY, 1);
 							i = ft_strlen(arg) - 1;
 						}
 					} else if (arg_type == OPTIONAL_ARG_SEP) {
 						if (arg[i + 1]) {
 							// -avalue
 							value = ft_strdup(arg + i + 1);
-							if (!value) return (g_nm.error = E_NO_MEMORY, 1);
+							if (!value) return (g_error = E_NO_MEMORY, 1);
 							i = ft_strlen(arg) - 1;
 						} else if (*idx + 1 < argc) {
 							char *next = argv[*idx + 1];
@@ -258,7 +264,7 @@
 								// -a value
 								(*idx)++;
 								value = ft_strdup(argv[*idx]);
-								if (!value) return (g_nm.error = E_NO_MEMORY, 1);
+								if (!value) return (g_error = E_NO_MEMORY, 1);
 							}
 						}
 					}
@@ -366,11 +372,10 @@
 		t_parse_result *parse_options(int argc, char **argv, const char *short_opts, const char *short_opts_plus, const t_long_option *long_opts, const char *usage, int ignore_mode) {
 			if (!argv || argc < 1) return (NULL);
 
-			g_nm.error = 0;
 			t_parse_result *result = malloc(sizeof(t_parse_result));
 			if (!result) {
 				ft_dprintf(STDERR_FILENO, NAME": memory allocation failed\n");
-				return (g_nm.error = E_NO_MEMORY, NULL);
+				return (g_error = E_NO_MEMORY, NULL);
 			}
 			ft_memset(result, 0, sizeof(t_parse_result));
 
@@ -378,7 +383,7 @@
 			if (!tmp_args) {
 				ft_dprintf(STDERR_FILENO, NAME": memory allocation failed\n");
 				free_options(result);
-				return (g_nm.error = E_NO_MEMORY, NULL);
+				return (g_error = E_NO_MEMORY, NULL);
 			}
 			ft_memset(tmp_args, 0, argc * sizeof(char*));
 
@@ -404,7 +409,7 @@
 			for (int i = 1; i < argc; i++) {
 				if (done_with_opts) {
 					tmp_args[arg_count] = ft_strdup(argv[i]);
-					if (!tmp_args[arg_count++]) { g_nm.error = E_NO_MEMORY; break; }
+					if (!tmp_args[arg_count++]) { g_error = E_NO_MEMORY; break; }
 					continue;
 				}
 
@@ -420,7 +425,7 @@
 				// Ignore -number or +number if ignore_numbers is active
 				if (ignore_mode == IGNORE_NUMBER && (arg[0] == '-' || arg[0] == '+') && arg[1] != '\0' && ft_isnum_s(&arg[1])) {
 					tmp_args[arg_count] = ft_strdup(arg);
-					if (!tmp_args[arg_count++]) { g_nm.error = E_NO_MEMORY; break; }
+					if (!tmp_args[arg_count++]) { g_error = E_NO_MEMORY; break; }
 					done_with_opts = 1;
 					continue;
 				}
@@ -438,7 +443,7 @@
 					if (ret == 1) break;
 					if (ret == 2) {
 						tmp_args[arg_count] = ft_strdup(arg);
-						if (!tmp_args[arg_count++]) { g_nm.error = E_NO_MEMORY; break; }
+						if (!tmp_args[arg_count++]) { g_error = E_NO_MEMORY; break; }
 						done_with_opts = 1;
 					}
 					continue;
@@ -451,7 +456,7 @@
 					if (ret == 1) break;
 					if (ret == 2) {
 						tmp_args[arg_count] = ft_strdup(arg);
-						if (!tmp_args[arg_count++]) { g_nm.error = E_NO_MEMORY; break; }
+						if (!tmp_args[arg_count++]) { g_error = E_NO_MEMORY; break; }
 						done_with_opts = 1;
 					}
 					continue;
@@ -459,14 +464,14 @@
 
 				// Argument
 				tmp_args[arg_count] = ft_strdup(arg);
-				if (!tmp_args[arg_count++]) { g_nm.error = E_NO_MEMORY; break; }
+				if (!tmp_args[arg_count++]) { g_error = E_NO_MEMORY; break; }
 				done_with_opts = 1;
 			}
 
 			result->argc = arg_count;
-			if (!g_nm.error && arg_count > 0) {
+			if (!g_error && arg_count > 0) {
 				result->argv = malloc((arg_count + 1) * sizeof(char*));
-				if (!result->argv) g_nm.error = E_NO_MEMORY;
+				if (!result->argv) g_error = E_NO_MEMORY;
 				else {
 					for (int i = 0; i < arg_count; i++)
 						result->argv[i] = tmp_args[i];
@@ -474,9 +479,9 @@
 				}
 			}
 
-			if (g_nm.error) {
-				if (g_nm.error == E_NO_MEMORY)	ft_dprintf(STDERR_FILENO, NAME": memory allocation failed\n");
-				if (g_nm.error == E_OPT_MAX)	ft_dprintf(STDERR_FILENO, NAME": Too many options\n");
+			if (g_error) {
+				if (g_error == E_NO_MEMORY)	ft_dprintf(STDERR_FILENO, NAME": memory allocation failed\n");
+				if (g_error == E_OPT_MAX)	ft_dprintf(STDERR_FILENO, NAME": Too many options\n");
 				if (tmp_args) {
 					for (int i = 0; tmp_args[i]; ++i)
 						free(tmp_args[i]);

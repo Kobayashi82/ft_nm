@@ -91,6 +91,22 @@
 
 		ft_memcpy(copy, s1, len);
 		copy[len] = '\0';
+
+		return (copy);
+	}
+
+	char *ft_strndup(const char *s1, size_t n) {
+		if (!s1) return (NULL);
+
+		size_t len = 0;
+		while (len < n && s1[len] != '\0') len++;
+
+		char *copy = malloc(len + 1);
+		if (!copy) return (NULL);
+
+		ft_memcpy(copy, s1, len);
+		copy[len] = '\0';
+
 		return (copy);
 	}
 
@@ -119,6 +135,30 @@
 		while (len--)
 			*p++ = (unsigned char)c;
 		return (b);
+	}
+
+#pragma endregion
+
+#pragma region "ATOI"
+
+	int ft_atoi(const char *str) {
+		int sign = 1;
+		int num = 0;
+
+		if (!str) return (0);
+
+		while ((*str >= 9 && *str <= 13) || *str == 32)
+			++str;
+
+		if (*str == '+' || *str == '-') {
+			if (*str == '-') sign = -sign;
+			++str;
+		}
+
+		while (*str >= '0' && *str <= '9')
+			num = (num * 10) + (*(str++) - '0');
+
+		return (num * sign);
 	}
 
 #pragma endregion

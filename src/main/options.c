@@ -34,7 +34,7 @@
 
 		ft_dprintf(STDOUT_FILENO, "%s", msg);
 
-		return (E_END);
+		return (-1);
 	}
 
 #pragma endregion
@@ -52,7 +52,7 @@
 
 		ft_dprintf(STDOUT_FILENO, "%s", msg);
 
-		return (E_END);
+		return (-1);
 	}
 
 #pragma endregion
@@ -67,7 +67,7 @@
 		};
 
 		t_parse_result *result = parse_options(argc, argv, "aADgnpruUWhv", NULL, long_opts, "ft_nm [option(s)] [file(s)]", IGNORE_OFF);
-		if (!result) return (free_options(result), (g_nm.error == E_OPT_MAX || g_nm.error == E_OPT_INVALID) ? 2 : 1);
+		if (!result) return (free_options(result), 1);
 		if (find_long_option(result, "help")	|| has_option(result, 'h', 0))	return (free_options(result), help());
 		if (find_long_option(result, "version")	|| has_option(result, 'v', 0))	return (free_options(result), version());
 
@@ -85,36 +85,32 @@
 		g_nm.options.no_weak		= has_option(result, 'W', 0);
 
 		if (!result->argc) {
-			g_nm.elf_total = 1;
-			g_nm.elf = malloc(g_nm.elf_total * sizeof(t_elf));
+			g_nm.file_total = 1;
+			g_nm.file = malloc(g_nm.file_total * sizeof(t_file));
 			char *file = ft_strdup("a.out");
-			if (!g_nm.elf || !file) {
-				g_nm.error = E_NO_MEMORY;
-				free(g_nm.elf);
+			if (!g_nm.file || !file) {
+				free(g_nm.file);
 				free(file);
 				ret = 1;
 			} else {
-				g_nm.elf[0].file = file;
-				g_nm.elf[0].fd = -1;
-				g_nm.elf[0].size = 0;
-				g_nm.elf[0].map = NULL;
-				g_nm.elf[0].bits = 0;
+				g_nm.file[0].path = file;
+				g_nm.file[0].size = 0;
+				g_nm.file[0].base = NULL;
+				g_nm.file[0].elf = NULL;
 			}
 		} else {
-			g_nm.elf_total = result->argc;
-			g_nm.elf = malloc(g_nm.elf_total * sizeof(t_elf));
-			if (!g_nm.elf) {
-				g_nm.error = E_NO_MEMORY;
-				free(g_nm.elf);
+			g_nm.file_total = result->argc;
+			g_nm.file = malloc(g_nm.file_total * sizeof(t_file));
+			if (!g_nm.file) {
+				free(g_nm.file);
 				ret = 1;
 			} else {
 				for (int i = 0; i < result->argc; ++i) {
-					g_nm.elf[i].file = result->argv[i];
+					g_nm.file[i].path = result->argv[i];
 					result->argv[i] = NULL;
-					g_nm.elf[i].fd = -1;
-					g_nm.elf[i].size = 0;
-					g_nm.elf[i].map = NULL;
-					g_nm.elf[i].bits = 0;
+					g_nm.file[i].size = 0;
+					g_nm.file[i].base = NULL;
+					g_nm.file[i].elf = NULL;
 				}
 			}
 		}

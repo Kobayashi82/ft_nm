@@ -5,11 +5,9 @@
 
 	#include <stddef.h>
 
-	#define NAME "ft_nm"
-
 #pragma endregion
 
-#pragma region "Enumeratos"
+#pragma region "Enumerators"
 
 	enum e_getopt {
 		NO_ARGUMENT,						// 
@@ -25,6 +23,7 @@
 		E_OPT_NO_ARGUMENT		= 302,		// Missing required argument for option
 		E_OPT_ARGUMENT			= 303,		// Unexpected argument for option
 		E_SOPT_INVALID			= 304,		// Invalid shell option
+		E_NO_MEMORY				= 990,		// No memory available
 	};
 
 #pragma endregion

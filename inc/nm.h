@@ -5,61 +5,63 @@
 
 	#include <stddef.h>
 	#include <stdint.h>
+	
+	#define NAME "ft_nm"
 
 #pragma endregion
 
 #pragma region "Enumerators"
 
-	enum e_error {
-		NOTHING					= 0,		// No error
-		E_NO_MEMORY				= 990,		// No more memory available
-		E_END					= 997,		// End the program
-		// exit_error
-		EE_FREE_NONE			= 290,		// Dont free any value
-		EE_FREE_VAL1			= 291,		// Free 'value1'
-		EE_FREE_VAL2			= 292,		// Free 'value2'
-		EE_FREE_BOTH			= 294,		// Free 'value1' and 'value2'
-		EE_RETURN				= 298,		// The shell must continue
-		EE_EXIT					= 299		// The shell must exit
-	};
+	enum s_error	{ TRUNCATED = 10, UNRECOGNIZED = 11 };
+	enum e_filetype	{ ELF, ARCHIVE };
 
 #pragma endregion
 
 #pragma region "Structures"
 
 	typedef struct s_options {
-		int		debug_syms;    				// -a
-		int		print_filename;				// -A
-		int		dynamic;       				// -D
-		int		extern_only;   				// -g
-		int		numeric_sort;  				// -n
-		int		no_sort;       				// -p
-		int		reverse_sort;  				// -r
-		int		undefined_only;				// -u
-		int		defined_only;  				// -U
-		int		no_weak;       				// -W
+		int				debug_syms;    		// -a - descripción
+		int				print_filename;		// -A - descripción
+		int				dynamic;       		// -D - descripción
+		int				extern_only;   		// -g - descripción
+		int				numeric_sort;  		// -n - descripción
+		int				no_sort;       		// -p - descripción
+		int				reverse_sort;  		// -r - descripción
+		int				undefined_only;		// -u - descripción
+		int				defined_only;  		// -U - descripción
+		int				no_weak;       		// -W - descripción
 	} t_options;
 
-	typedef struct s_symbol {
-		char			type;				// 
-		char			*name;				// 
-		uint64_t		value;				// 
-		struct s_symbol	*next;				// 
-	} t_symbol;
+	typedef struct s_sym {
+		char			type;				// Symbol type
+		char			*name;				// Symbol name
+		uint64_t		value;				// Symbol pointer
+		struct s_sym	*next;				// Next symbol
+	} t_sym;
 
 	typedef struct s_elf {
-		char	*file;						// 
-		int		fd;							// 
-		size_t 	size;						// 
-		void	*map;						// 
-		int		bits;						// x32 / x64
+		char			*name;				// Member name
+		int				bits;				// Architecture (32/64 bits)
+		uint16_t		type;				// Type of member
+		void			*base;				// Pointer to the member in memory
+		size_t 			size;				// Length of the member
+		int				error;				// Error for the member
+		t_sym			*symbol;			// 
+		struct s_elf	*next;				// Next member
 	} t_elf;
 
+	typedef struct s_file {
+		char			*path;				// Path of the file
+		int				type;				// Binary / .o / .so / .a
+		void			*base;				// Pointer to the file in memory
+		size_t 			size;				// Length of the file
+		t_elf			*elf;				// ELF content
+	} t_file;
+
 	typedef struct s_nm {
-		t_elf		*elf;					// 
-		int			elf_total;				// 
-		int			error;					// Error type
-		t_options	options;				// Options
+		t_file			*file;				// Array of files
+		int				file_total;			// Total of files
+		t_options		options;			// Options
 	} t_nm;
 
 #pragma endregion
@@ -73,12 +75,20 @@
 #pragma region "Methods"
 
 	// Main
-	int	options(int argc, char **argv);
+	int		options(int argc, char **argv);
 
-	// Elf
-	int	load_file(t_elf *elf);
+	// Section
+	int		validate(t_elf *elf, const char *file);
+
+	// File
+	int		is_archive(void *base, size_t size);
+	int		parse_archive(t_file *file);
+	int		map_file(t_file *file);
+	int		unmap_file(t_file *file);
 
 	// Output
-	t_symbol *merge_sort(t_symbol *head, int by_value);
+	t_sym	*reverse(t_sym *head);
+	t_sym	*sort(t_sym *head, int by_value);
+	int		print_file(t_file *file);
 
 #pragma endregion

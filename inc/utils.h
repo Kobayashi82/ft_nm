@@ -38,6 +38,7 @@
 	#pragma region "STRDUP"
 
 		char	*ft_strdup(const char *s1);
+		char	*ft_strndup(const char *s1, size_t n);
 
 	#pragma endregion
 
@@ -50,6 +51,12 @@
 	#pragma region "MEMSET"
 
 		void	*ft_memset(void *b, int c, size_t len);
+
+	#pragma endregion
+	
+	#pragma region "ATOI"
+
+		int		ft_atoi(const char *str);
 
 	#pragma endregion
 

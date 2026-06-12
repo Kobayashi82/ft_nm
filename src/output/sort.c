@@ -6,17 +6,25 @@
 
 #pragma endregion
 
-#pragma region "Compare"
+#pragma region "Is Undefined"
 
-	static int	is_undefined(t_symbol *s) {
+	// Comprueba si el símbolo no está definido
+	static int is_undefined(t_sym *s) {
 		return (s->type == 'U' || s->type == 'u' || s->type == 'w' || s->type == 'v');
 	}
 
-	static int cmp_by_name(t_symbol *a, t_symbol *b) {
+#pragma endregion
+
+#pragma region "Compare"
+
+	// Compara dos símbolos por su nombre
+	static int cmp_by_name(t_sym *a, t_sym *b) {
 		return (ft_strcmp(a->name, b->name));
 	}
 
-	static int cmp_by_value(t_symbol *a, t_symbol *b) {
+	// Compara dos símbolos por su valor
+	// Los símbolos no definidos van antes que los definidos y se ordenan por nombre
+	static int cmp_by_value(t_sym *a, t_sym *b) {
 		if (is_undefined(a) && is_undefined(b))	return (ft_strcmp(a->name, b->name));
 		if (is_undefined(a))					return (-1);
 		if (is_undefined(b))					return (1);
@@ -27,33 +35,14 @@
 
 #pragma endregion
 
-#pragma region "Split"
-
-	// Splits the list in half
-	static t_symbol *split_half(t_symbol *head) {
-		t_symbol *slow = head;
-		t_symbol *fast = head->next;
-
-		while (fast && fast->next) {
-			slow = slow->next;
-			fast = fast->next->next;
-		}
-		fast = slow->next;
-		slow->next = NULL;
-
-		return (fast);
-	}
-
-#pragma endregion
-
 #pragma region "Merge"
 
-	// Merges two sorted lists into one sorted list
-	static t_symbol *merge(t_symbol *a, t_symbol *b, int by_value) {
-		t_symbol dummy;
-		t_symbol *tail = &dummy;
+	// Une dos listas ordenadas en una sola lista
+	static t_sym *merge(t_sym *a, t_sym *b, int by_value) {
+		t_sym dummy;
+		t_sym *tail = &dummy;
 
-		int (*cmp)(t_symbol *, t_symbol *);
+		int (*cmp)(t_sym *, t_sym *);
 		cmp = (by_value) ? cmp_by_value : cmp_by_name;
 
 		dummy.next = NULL;
@@ -76,19 +65,59 @@
 
 #pragma endregion
 
+#pragma region "Split"
+
+	// Divide la lista por la mitad
+	static t_sym *split_half(t_sym *head) {
+		t_sym *slow = head;
+		t_sym *fast = head->next;
+
+		while (fast && fast->next) {
+			slow = slow->next;
+			fast = fast->next->next;
+		}
+		fast = slow->next;
+		slow->next = NULL;
+
+		return (fast);
+	}
+
+#pragma endregion
+
 #pragma region "Sort"
 
-	// Recursively splits and merges the list
-	t_symbol *merge_sort(t_symbol *head, int by_value) {
-		t_symbol *second_half;
-
+	// Divide, ordena y fusiona la lista recursivamente
+	t_sym *sort(t_sym *head, int by_value) {
 		if (!head || !head->next) return (head);
 
-		second_half = split_half(head);
-		head = merge_sort(head, by_value);
-		second_half = merge_sort(second_half, by_value);
+		t_sym *second_half;
+		second_half	= split_half(head);
+		head		= sort(head, by_value);
+		second_half	= sort(second_half, by_value);
 
 		return (merge(head, second_half, by_value));
+	}
+
+#pragma endregion
+
+#pragma region "Reverse"
+
+	// Invierte el orden
+	t_sym *reverse(t_sym *head) {
+		if (!head || !head->next) return (head);
+
+		t_sym *current = head;
+		t_sym *prev = NULL;
+		t_sym *next = NULL;
+
+		while (current) {
+			next = current->next;
+			current->next = prev;
+			prev = current;
+			current = next;
+		}
+
+		return (prev);
 	}
 
 #pragma endregion

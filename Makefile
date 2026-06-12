@@ -52,9 +52,10 @@ SRCS		= main/main.c			\
 			  main/options.c		\
 			  output/output.c		\
 			  output/sort.c			\
-			  elf/elf.c				\
-			  elf/sections.c		\
-			  elf/symbols.c			\
+			  elf/archive.c			\
+			  elf/file.c			\
+			  elf/section.c			\
+			  elf/symbol.c			\
 			  utils/ft_dprintf.c	\
 			  utils/getopt.c		\
 			  utils/utils.c			\
