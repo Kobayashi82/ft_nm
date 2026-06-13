@@ -74,17 +74,21 @@
 #pragma region "Create Node"
 
 	// Crea nodo 'ELF'
-	static t_elf *create_node(void *base, size_t size) {
+	static t_elf *create_node(t_file *file, void *base, size_t size) {
 		t_elf *node = malloc(sizeof(t_elf));
 		if (!node) return (NULL);
 		ft_memset(node, 0, sizeof(t_elf));
 
-		node->base = base;
-		node->size = size;
-		node->bits = 0;
-		node->error = 0;
-		node->symbol = NULL;
-		node->next = NULL;
+		node->file        = file;
+		node->base        = base;
+		node->size        = size;
+		node->bits        = 0;
+		node->error       = 0;
+		node->shdr_offset = 0;
+    	node->shdr_num    = 0;
+		node->sym         = NULL;
+		node->last_sym    = NULL;
+		node->next        = NULL;
 
 		return (node);
 	}
@@ -143,12 +147,20 @@
 
 			// Saltar miembros especiales (índice de símbolos '/' y tabla de nombres '//')
 			if (!is_special(name)) {
-				node = create_node(cursor, member_size);
+				node = create_node(file, cursor, member_size);
 				if (!node) {
+					free(name);
 					ft_dprintf(STDERR_FILENO, NAME": %s: memory allocation failed\n", file->path);
-					return (1);
+					return (NO_MEMORY);
 				}
 				node->name = name;
+
+				if (member_size < 4 || ft_strncmp((char *)cursor, "\x7f\x45\x4c\x46", 4)) {
+					free(name);
+					free(node);
+					ft_dprintf(STDERR_FILENO, NAME": %s: malformed archive\n", file->path);
+					return (1);
+				}
 
 				if (!file->elf)	file->elf = node;
 				else			tail->next = node;

@@ -2,7 +2,9 @@
 #pragma region "Includes"
 
 	#include "nm.h"
+	#include "utils.h"
 
+	#include <unistd.h>
 	#include <stdlib.h>
 
 #pragma endregion
@@ -24,14 +26,13 @@
 		if (!error) {
 			t_elf *current = file->elf;
 			while (current) {
-				current->error = validate(current, current->name);
+				if (!current->error) current->error = validate(current);
+				if (!current->error) current->error = load_sections(current);
+				if (!current->error) current->error = load_symbols(current);
 
-				if (!current->error) {
-					current->symbol = malloc(sizeof(t_sym));
-					current->symbol->name = "algo";
-					current->symbol->type = 'K';
-					current->symbol->value = 12345;
-					current->symbol->next = NULL;
+				if (current->error == NO_MEMORY) {
+					unmap_file(file);
+					return (NO_MEMORY);
 				}
 
 				if (current->error && file->type == ELF) error = 1;
@@ -56,7 +57,14 @@
 
 		if (!ret) {
 			for (int i = 0; i < g_nm.file_total; ++i) {
-				ret += process(&g_nm.file[i]);
+				int error = process(&g_nm.file[i]);
+				ret += error;
+
+				if (error == NO_MEMORY) {
+					ft_dprintf(STDERR_FILENO, NAME": %s: memory allocation failed\n", g_nm.file[i]);
+					return (1);
+				}
+
 				free(g_nm.file[i].path);
 			}
 			free(g_nm.file);

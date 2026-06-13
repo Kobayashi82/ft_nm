@@ -1,4 +1,3 @@
-
 #pragma region "Includes"
 
 	#include "nm.h"
@@ -10,7 +9,7 @@
 
 	// Comprueba si el símbolo no está definido
 	static int is_undefined(t_sym *s) {
-		return (s->type == 'U' || s->type == 'u' || s->type == 'w' || s->type == 'v');
+		return (s->type == 'U' || s->type == 'u' || s->type == 'w');
 	}
 
 #pragma endregion
@@ -18,19 +17,21 @@
 #pragma region "Compare"
 
 	// Compara dos símbolos por su nombre
-	static int cmp_by_name(t_sym *a, t_sym *b) {
-		return (ft_strcmp(a->name, b->name));
+	static int cmp_by_name(t_sym *a, t_sym *b, int reverse) {
+		int result = ft_strcmp(a->name, b->name);
+		return (reverse ? -result : result);
 	}
 
 	// Compara dos símbolos por su valor
 	// Los símbolos no definidos van antes que los definidos y se ordenan por nombre
-	static int cmp_by_value(t_sym *a, t_sym *b) {
-		if (is_undefined(a) && is_undefined(b))	return (ft_strcmp(a->name, b->name));
-		if (is_undefined(a))					return (-1);
-		if (is_undefined(b))					return (1);
-		if (a->value > b->value)				return (1);
+	static int cmp_by_value(t_sym *a, t_sym *b, int reverse) {
+		if (is_undefined(a) && is_undefined(b))		return (reverse ? -ft_strcmp(a->name, b->name) : ft_strcmp(a->name, b->name));
+		if (is_undefined(a))						return (reverse ? 1 : -1);
+		if (is_undefined(b))						return (reverse ? -1 : 1);
+		if (a->value > b->value)					return (reverse ? -1 : 1);
+		if (a->value < b->value)					return (reverse ? 1 : -1);
 
-		return (0);
+		return (reverse ? -ft_strcmp(a->name, b->name) : ft_strcmp(a->name, b->name));
 	}
 
 #pragma endregion
@@ -38,16 +39,16 @@
 #pragma region "Merge"
 
 	// Une dos listas ordenadas en una sola lista
-	static t_sym *merge(t_sym *a, t_sym *b, int by_value) {
-		t_sym dummy;
-		t_sym *tail = &dummy;
+	static t_sym *merge(t_sym *a, t_sym *b, int by_value, int reverse) {
+		t_sym	dummy;
+		t_sym	*tail = &dummy;
+		int		(*cmp)(t_sym *, t_sym *, int);
 
-		int (*cmp)(t_sym *, t_sym *);
 		cmp = (by_value) ? cmp_by_value : cmp_by_name;
 
 		dummy.next = NULL;
 		while (a && b) {
-			if (cmp(a, b) <= 0) {
+			if (cmp(a, b, reverse) <= 0) {
 				tail->next = a;
 				a = a->next;
 			} else {
@@ -87,37 +88,15 @@
 #pragma region "Sort"
 
 	// Divide, ordena y fusiona la lista recursivamente
-	t_sym *sort(t_sym *head, int by_value) {
+	t_sym *sort(t_sym *head, int by_value, int reverse) {
 		if (!head || !head->next) return (head);
 
 		t_sym *second_half;
 		second_half	= split_half(head);
-		head		= sort(head, by_value);
-		second_half	= sort(second_half, by_value);
+		head		= sort(head, by_value, reverse);
+		second_half	= sort(second_half, by_value, reverse);
 
-		return (merge(head, second_half, by_value));
-	}
-
-#pragma endregion
-
-#pragma region "Reverse"
-
-	// Invierte el orden
-	t_sym *reverse(t_sym *head) {
-		if (!head || !head->next) return (head);
-
-		t_sym *current = head;
-		t_sym *prev = NULL;
-		t_sym *next = NULL;
-
-		while (current) {
-			next = current->next;
-			current->next = prev;
-			prev = current;
-			current = next;
-		}
-
-		return (prev);
+		return (merge(head, second_half, by_value, reverse));
 	}
 
 #pragma endregion

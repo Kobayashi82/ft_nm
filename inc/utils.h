@@ -13,6 +13,7 @@
 
 		int		ft_isdigit(int c);
 		int		ft_isnum_s(const char *str);
+		int		ft_islower(char c);
 
 	#pragma endregion
 
@@ -28,10 +29,16 @@
 		int		ft_strncmp(const char *s1, const char *s2, size_t n);
 
 	#pragma endregion
-	
+
 	#pragma region "STRCHR"
 
 		char	*ft_strchr(const char *s, int c);
+
+	#pragma endregion
+
+	#pragma region "STRLCPY"
+
+		size_t	ft_strlcpy(char *dst, const char *src, size_t dstsize);
 
 	#pragma endregion
 
@@ -53,7 +60,7 @@
 		void	*ft_memset(void *b, int c, size_t len);
 
 	#pragma endregion
-	
+
 	#pragma region "ATOI"
 
 		int		ft_atoi(const char *str);

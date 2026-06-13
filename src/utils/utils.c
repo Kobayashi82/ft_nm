@@ -22,6 +22,10 @@
 
 		return (1);
 	}
+	
+	int ft_islower(char c) {
+		return (c >= 'a' && c <= 'z');
+	}
 
 #pragma endregion
 
@@ -76,6 +80,27 @@
 
 		if (*s == (char)c) return ((char *)s);
 		return (NULL);
+	}
+
+#pragma endregion
+
+#pragma region "STRLCPY"
+
+	size_t ft_strlcpy(char *dst, const char *src, size_t dstsize) {
+		size_t	i = 0;
+		int		srclen = 0;
+
+		while (src[srclen]) ++srclen;
+
+		if (dstsize > 0) {
+			while (src[i] && i < dstsize - 1) {
+				dst[i] = src[i];
+				++i;
+			}
+			dst[i] = '\0';
+		}
+
+		return (srclen);
 	}
 
 #pragma endregion

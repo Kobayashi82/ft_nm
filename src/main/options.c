@@ -61,8 +61,18 @@
 
 	int options(int argc, char **argv) {
 		t_long_option long_opts[] = {
-			{"help",	NO_ARGUMENT, 'h'},
-			{"version",	NO_ARGUMENT, 'v'},
+			{"debug-syms",		NO_ARGUMENT, 'a'},
+			{"print-file-name",	NO_ARGUMENT, 'A'},
+			{"dynamic",			NO_ARGUMENT, 'D'},
+			{"extern-only",		NO_ARGUMENT, 'g'},
+			{"numeric-sort",	NO_ARGUMENT, 'n'},
+			{"no-sort",			NO_ARGUMENT, 'p'},
+			{"reverse-sort",	NO_ARGUMENT, 'r'},
+			{"undefined-only",	NO_ARGUMENT, 'u'},
+			{"defined-only",	NO_ARGUMENT, 'U'},
+			{"no-weak",			NO_ARGUMENT, 'W'},
+			{"help",			NO_ARGUMENT, 'h'},
+			{"version",			NO_ARGUMENT, 'v'},
 			{NULL, 0, 0}
 		};
 
@@ -84,6 +94,20 @@
 		g_nm.options.defined_only	= has_option(result, 'U', 0);
 		g_nm.options.no_weak		= has_option(result, 'W', 0);
 
+		
+		t_opt_value *curr = result->options;
+		while (curr != NULL) {
+			if (curr->opt == 'u') {
+				g_nm.options.undefined_only = 1;
+				g_nm.options.defined_only = 0;
+			} 
+			else if (curr->opt == 'U') {
+				g_nm.options.defined_only = 1;
+				g_nm.options.undefined_only = 0;
+			}
+			curr = curr->next;
+		}
+
 		if (!result->argc) {
 			g_nm.file_total = 1;
 			g_nm.file = malloc(g_nm.file_total * sizeof(t_file));
@@ -94,6 +118,7 @@
 				ret = 1;
 			} else {
 				g_nm.file[0].path = file;
+				g_nm.file[0].type = ELF;
 				g_nm.file[0].size = 0;
 				g_nm.file[0].base = NULL;
 				g_nm.file[0].elf = NULL;
@@ -108,6 +133,7 @@
 				for (int i = 0; i < result->argc; ++i) {
 					g_nm.file[i].path = result->argv[i];
 					result->argv[i] = NULL;
+					g_nm.file[i].type = ELF;
 					g_nm.file[i].size = 0;
 					g_nm.file[i].base = NULL;
 					g_nm.file[i].elf = NULL;

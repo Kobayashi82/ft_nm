@@ -25,10 +25,11 @@
 		while (current) {
 			t_elf *tmp = current;
 			current = current->next;
-			t_sym *curr_sym = tmp->symbol;
+			t_sym *curr_sym = tmp->sym;
 			while(curr_sym) {
 				t_sym *tmp_sym = curr_sym;
 				curr_sym = curr_sym->next;
+				free(tmp_sym->name);
 				free(tmp_sym);
 			}
 			free(tmp->name);
@@ -52,24 +53,38 @@
 		// Abrir archivo
 		int fd = open(file->path, O_RDONLY);
 		if (fd == -1) {
-			if	(errno == ENOENT)	ft_dprintf(STDERR_FILENO, "ft_nm: '%s': No such file\n", file->path);
-			else 					ft_dprintf(STDERR_FILENO, "ft_nm: %s: %s\n", file->path, strerror(errno));
+			if	(errno == ENOENT)	ft_dprintf(STDERR_FILENO, NAME": '%s': No such file\n", file->path);
+			else 					ft_dprintf(STDERR_FILENO, NAME": %s: %s\n", file->path, strerror(errno));
 			return (1);
 		}
 
-		// Obtener tamaño y verificar si no es un directorio
+		// Obtener información del archivo
 		struct stat st;
-		if (fstat(fd, &st) == -1 || S_ISDIR(st.st_mode)) {
-			ft_dprintf(STDERR_FILENO, "ft_nm: Warning: '%s' is a directory\n", file->path);
+		if (fstat(fd, &st) == -1) {
+			ft_dprintf(STDERR_FILENO, NAME": %s: %s\n", file->path, strerror(errno));
 			close(fd);
 			return (1);
 		}
-		file->size = st.st_size;
+
+		// Verificar si es un directorio
+		if (S_ISDIR(st.st_mode)) {
+			ft_dprintf(STDERR_FILENO, NAME": Warning: '%s' is a directory\n", file->path);
+			close(fd);
+			return (1);
+		}
+
+		// Verificar si no es un archivo regular
+		if (!S_ISREG(st.st_mode)) {
+			ft_dprintf(STDERR_FILENO, NAME": Warning: '%s' is not an ordinary file\n", file->path);
+			close(fd);
+			return (1);
+		}
 
 		// Mapear el archivo en memoria
+		file->size = st.st_size;
 		file->base = mmap(NULL, file->size, PROT_READ, MAP_PRIVATE, fd, 0);
 		if (file->base == MAP_FAILED) {
-			ft_dprintf(STDERR_FILENO, "ft_nm: %s: %s\n", file->path, strerror(errno));
+			// ft_dprintf(STDERR_FILENO, NAME": %s: %s\n", file->path, strerror(errno));
 			close(fd);
 			return (1);
 		}
@@ -84,17 +99,21 @@
 			t_elf *node = malloc(sizeof(t_elf));
 			if (!node) {
 				ft_dprintf(STDERR_FILENO, NAME": %s: memory allocation failed\n", file->path);
-				return (1);
+				return (NO_MEMORY);
 			}
 			ft_memset(node, 0, sizeof(t_elf));
 
-			node->name = ft_strdup(file->path);
-			node->base = file->base;
-			node->size = file->size;
-			node->bits = 0;
-			node->error = 0;
-			node->symbol = NULL;
-			node->next = NULL;
+			node->file        = file;
+			node->name        = ft_strdup(file->path);
+			node->base        = file->base;
+			node->size        = file->size;
+			node->bits        = 0;
+			node->error       = 0;
+			node->shdr_offset = 0;
+    		node->shdr_num    = 0;
+			node->sym         = NULL;
+			node->last_sym    = NULL;
+			node->next        = NULL;
 
 			file->elf = node;
 		}
