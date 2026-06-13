@@ -17,6 +17,9 @@ doc/ft_nm\ 3.6.pdf
 !src
 !src/**
 
+!tester
+!tester/**
+
 !Makefile
 !.gitignore
 !README.md
