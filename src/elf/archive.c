@@ -77,18 +77,12 @@
 	static t_elf *add_node(t_file *file, void *base, size_t size) {
 		t_elf *node = malloc(sizeof(t_elf));
 		if (!node) return (NULL);
+
 		ft_memset(node, 0, sizeof(t_elf));
 
 		node->file        = file;
 		node->base        = base;
 		node->size        = size;
-		node->bits        = 0;
-		node->error       = 0;
-		node->shdr_offset = 0;
-    	node->shdr_num    = 0;
-		node->sym         = NULL;
-		node->last_sym    = NULL;
-		node->next        = NULL;
 
 		return (node);
 	}

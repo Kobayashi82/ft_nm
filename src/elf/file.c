@@ -101,19 +101,13 @@
 				ft_dprintf(STDERR_FILENO, NAME": %s: memory allocation failed\n", file->path);
 				return (NO_MEMORY);
 			}
+
 			ft_memset(node, 0, sizeof(t_elf));
 
 			node->file        = file;
 			node->name        = ft_strdup(file->path);
 			node->base        = file->base;
 			node->size        = file->size;
-			node->bits        = 0;
-			node->error       = 0;
-			node->shdr_offset = 0;
-    		node->shdr_num    = 0;
-			node->sym         = NULL;
-			node->last_sym    = NULL;
-			node->next        = NULL;
 
 			file->elf = node;
 		}

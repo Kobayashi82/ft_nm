@@ -69,7 +69,7 @@
 
 	#pragma region "32 Bits"
 
-		static int load_section_32(t_elf *elf) {
+		static int load_sections_32(t_elf *elf) {
 			Elf32_Ehdr *ehdr = (Elf32_Ehdr *)elf->base;
 
 			// Validar que SHT está dentro del archivo mapeado
@@ -123,7 +123,7 @@
 
 	#pragma region "64 Bits"
 
-		static int load_section_64(t_elf *elf) {
+		static int load_sections_64(t_elf *elf) {
 			Elf64_Ehdr *ehdr = (Elf64_Ehdr *)elf->base;
 
 			// Validar que SHT está dentro del archivo mapeado
@@ -179,8 +179,8 @@
 		int ret = 0;
 
 		if (!ret)						ret = validate(elf);
-		if (!ret && elf->bits == 32)	ret = load_section_32(elf);
-		if (!ret && elf->bits == 64)	ret = load_section_64(elf);
+		if (!ret && elf->bits == 32)	ret = load_sections_32(elf);
+		if (!ret && elf->bits == 64)	ret = load_sections_64(elf);
 		
 		return (ret);
 	}

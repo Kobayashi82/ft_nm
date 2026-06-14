@@ -1,6 +1,9 @@
 #!/bin/bash
 
-ft_nm=./ft_nm # "valgrind --leak-check=full --show-leak-kinds=all --track-fds=yes -q ./ft_nm"
+cp ft_nm tester/ft_nm
+cd tester
+ft_nm=./ft_nm
+# ft_nm="valgrind --leak-check=full --show-leak-kinds=all --track-fds=yes -q ./ft_nm"
 TEST_NUM=0
 
 run_nm() {
@@ -12,6 +15,9 @@ run_nm() {
     ft_nm_code=$?
     nm --without-symbol-versions "$@" > nm_out 2> nm_err
     nm_code=$?
+
+	sed -i 's/@GLIBC_[0-9.]*//g' ft_nm_out
+    sed -i 's/@GLIBC_[0-9.]*//g' nm_out
 
     local failed=0
     diff -q ft_nm_out nm_out > /dev/null 2>&1 || failed=1
