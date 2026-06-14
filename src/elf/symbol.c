@@ -60,7 +60,6 @@
 			}
 
 			// Obtener la seccion de los symbolos
-			Elf32_Ehdr *ehdr = (Elf32_Ehdr *)elf->base;
 			Elf32_Shdr *shdr = (Elf32_Shdr *)(elf->base + elf->shdr_offset);
 			Elf32_Shdr *sec  = &shdr[sym->st_shndx];
 
@@ -69,8 +68,7 @@
 			if (!(sec->sh_flags & SHF_WRITE) && (sec->sh_flags & SHF_ALLOC))	return (is_global ? 'R' : 'r');
 			if (sec->sh_flags   & SHF_WRITE)									return (is_global ? 'D' : 'd');
 
-			char *shstrtab = (char *)(elf->base + shdr[ehdr->e_shstrndx].sh_offset);
-			char *sec_name = shstrtab + sec->sh_name;
+			char *sec_name = (char *)(elf->shstrtab.base) + sec->sh_name;
 
 			// Si el nombre de la sección empieza por ".debug" o ".zdebug", es 'N'
 			if (!ft_strncmp(sec_name, ".debug", 6) || !ft_strncmp(sec_name, ".zdebug", 7)) return ('N');
@@ -98,7 +96,6 @@
 			}
 
 			// Obtener la seccion de los symbolos
-			Elf64_Ehdr *ehdr = (Elf64_Ehdr *)elf->base;
 			Elf64_Shdr *shdr = (Elf64_Shdr *)(elf->base + elf->shdr_offset);
 			Elf64_Shdr *sec  = &shdr[sym->st_shndx];
 
@@ -107,8 +104,7 @@
 			if (!(sec->sh_flags & SHF_WRITE) && (sec->sh_flags & SHF_ALLOC))	return (is_global ? 'R' : 'r');
 			if (sec->sh_flags   & SHF_WRITE)									return (is_global ? 'D' : 'd');
 
-			char *shstrtab = (char *)(elf->base + shdr[ehdr->e_shstrndx].sh_offset);
-			char *sec_name = shstrtab + sec->sh_name;
+			char *sec_name = (char *)(elf->shstrtab.base) + sec->sh_name;
 
 			// Si el nombre de la sección empieza por ".debug" o ".zdebug", es 'N'
 			if (!ft_strncmp(sec_name, ".debug", 6) || !ft_strncmp(sec_name, ".zdebug", 7)) return ('N');
@@ -155,6 +151,8 @@
 
 		t_section *sym_tab = (g_nm.options.dynamic) ? &elf->dynsym : &elf->symtab;
 		t_section *sym_str = (g_nm.options.dynamic) ? &elf->dynstr : &elf->strtab;
+		size_t sym_total = sym_tab->sh_size / ((elf->bits == 32) ? sizeof(Elf32_Sym) : sizeof(Elf64_Sym));
+		if (sym_total < 2) return (0);
 
 		if (!sym_tab->exists || !sym_str->exists) return (0);
 
@@ -182,10 +180,8 @@
 
 					uint16_t shndx = sym[i].st_shndx;
 					if (shndx < elf->shdr_num) {
-						Elf32_Ehdr *ehdr = (Elf32_Ehdr *)elf->base;
 						Elf32_Shdr *shdr = (Elf32_Shdr *)(elf->base + elf->shdr_offset);
-						char *shstrtab = (char *)(elf->base + shdr[ehdr->e_shstrndx].sh_offset); 
-						char *sec_name = shstrtab + shdr[shndx].sh_name;
+						char *sec_name = (char *)(elf->shstrtab.base) + shdr[shndx].sh_name;
 						name = ft_strdup(sec_name);
 						is_section = 1;
 						if (!name) return (NO_MEMORY);
@@ -202,11 +198,8 @@
 		}
 
 		if (elf->bits == 64) {
-			size_t sym_total = sym_tab->sh_size / sizeof(Elf64_Sym);
-			if (sym_total < 2) return (0);
-
-			Elf64_Sym *sym = (Elf64_Sym *)(elf->base + sym_tab->sh_offset);
-			char *strings = (char *)(elf->base + sym_str->sh_offset);
+			Elf64_Sym *sym = (Elf64_Sym *)sym_tab->base;
+			char *strings  = (char *)sym_str->base;
 
 			for (size_t i = 1; i < sym_total; ++i) {
 				char 		*name = get_name(strings + sym[i].st_name, sym_str->sh_size - sym[i].st_name);
@@ -225,10 +218,8 @@
 
 					uint16_t shndx = sym[i].st_shndx;
 					if (shndx < elf->shdr_num) {
-						Elf64_Ehdr *ehdr = (Elf64_Ehdr *)elf->base;
 						Elf64_Shdr *shdr = (Elf64_Shdr *)(elf->base + elf->shdr_offset);
-						char *shstrtab = (char *)(elf->base + shdr[ehdr->e_shstrndx].sh_offset); 
-						char *sec_name = shstrtab + shdr[shndx].sh_name;
+						char *sec_name = (char *)(elf->shstrtab.base) + shdr[shndx].sh_name;
 						name = ft_strdup(sec_name);
 						is_section = 1;
 						if (!name) return (NO_MEMORY);

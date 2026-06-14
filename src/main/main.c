@@ -26,7 +26,6 @@
 		if (!error) {
 			t_elf *current = file->elf;
 			while (current) {
-				if (!current->error) current->error = validate(current);
 				if (!current->error) current->error = load_sections(current);
 				if (!current->error) current->error = load_symbols(current);
 

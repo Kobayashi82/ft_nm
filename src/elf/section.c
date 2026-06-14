@@ -10,24 +10,19 @@
 
 #pragma region "Validate"
 
-	int validate(t_elf *elf) {
-		if (!elf || !elf->base) return (1);
-
-		const unsigned char *m = (const unsigned char *)elf->base;
-
-		// Truncado
-		if (elf->size < 5) return (UNRECOGNIZED);
+	static int validate(t_elf *elf) {
+		const char *ehdr = (const char *)elf->base;
 
 		// Magic Number
-		if (m[0] != 0x7f || m[1] != 'E' || m[2] != 'L' || m[3] != 'F') return (UNRECOGNIZED);
+		if (elf->size <= SELFMAG || ft_strncmp(ehdr, ELFMAG, SELFMAG)) return (UNRECOGNIZED);
 
 		// Class
-		if		(m[EI_CLASS] == ELFCLASS32)	elf->bits = 32;
-		else if	(m[EI_CLASS] == ELFCLASS64)	elf->bits = 64;
+		if		(ehdr[EI_CLASS] == ELFCLASS32)	elf->bits = 32;
+		else if	(ehdr[EI_CLASS] == ELFCLASS64)	elf->bits = 64;
 		else return (UNRECOGNIZED);
 
 		// Little Endian
-		if (m[EI_DATA] != ELFDATA2LSB) return (UNRECOGNIZED);
+		if (ehdr[EI_DATA] != ELFDATA2LSB) return (UNRECOGNIZED);
 
 		// Truncado
 		if (elf->bits == 32 && elf->size < sizeof(Elf32_Ehdr)) return (TRUNCATED);
@@ -37,10 +32,6 @@
 		if (elf->bits == 32 && ((Elf32_Ehdr *)elf->base)->e_machine != EM_386)		return (UNRECOGNIZED);
 		if (elf->bits == 64 && ((Elf64_Ehdr *)elf->base)->e_machine != EM_X86_64)	return (UNRECOGNIZED);
 
-		// Type
-		if (elf->bits == 32) elf->type = ((Elf32_Ehdr *)elf->base)->e_type;
-		if (elf->bits == 64) elf->type = ((Elf64_Ehdr *)elf->base)->e_type;
-
 		return (0);
 	}
 
@@ -49,20 +40,22 @@
 #pragma region "Set"
 
 	static int set_section(t_elf *elf, t_section *section, void *shdr) {
-		if (!section || !shdr) return (UNRECOGNIZED);
-
 		if (elf->bits == 32) {
+			section->base       = (uintptr_t)((uint8_t *)elf->base + ((Elf32_Shdr *)shdr)->sh_offset);
 			section->sh_offset	= ((Elf32_Shdr *)shdr)->sh_offset;
 			section->sh_size	= ((Elf32_Shdr *)shdr)->sh_size;
 			if (section->sh_offset + section->sh_size > elf->size) return (TRUNCATED);
+
 			section->exists = 1;
 			return (0);
 		}
 
 		if (elf->bits == 64) {
+			section->base       = (uintptr_t)((uint8_t *)elf->base + ((Elf64_Shdr *)shdr)->sh_offset);
 			section->sh_offset	= ((Elf64_Shdr *)shdr)->sh_offset;
 			section->sh_size	= ((Elf64_Shdr *)shdr)->sh_size;
 			if (section->sh_offset + section->sh_size > elf->size) return (TRUNCATED);
+
 			section->exists = 1;
 			return (0);
 		}
@@ -74,92 +67,122 @@
 
 #pragma region "Load"
 
-	int load_sections(t_elf *elf) {
-		if (!elf) return (UNRECOGNIZED);
+	#pragma region "32 Bits"
 
-		if (elf->bits == 32) {
+		static int load_section_32(t_elf *elf) {
 			Elf32_Ehdr *ehdr = (Elf32_Ehdr *)elf->base;
 
 			// Validar que SHT está dentro del archivo mapeado
 			if (ehdr->e_shoff + ehdr->e_shnum * sizeof(Elf32_Shdr) > elf->size) return (TRUNCATED);
 			// Dirección del SHT
 			Elf32_Shdr *shdr = (Elf32_Shdr *)(elf->base + ehdr->e_shoff);
+
 			elf->shdr_offset = ehdr->e_shoff;
 			elf->shdr_num = ehdr->e_shnum;
 
 			// Validar que e_shstrndx está dentro del archivo mapeado
-			if (ehdr->e_shstrndx >= ehdr->e_shnum) return (TRUNCATED);
-			// Dirección de header de .shstrtab
+			if (ehdr->e_shstrndx == SHN_UNDEF || ehdr->e_shstrndx >= ehdr->e_shnum) return (TRUNCATED);
+			// Dirección del header de .shstrtab
 			Elf32_Shdr *shstrtab = &shdr[ehdr->e_shstrndx];
-
 			// Validar que .shstrtab está dentro del archivo mapeado
 			if (shstrtab->sh_offset + shstrtab->sh_size > elf->size) return (TRUNCATED);
 
+			// Añadir referencia a .shstrtab
+			if (shstrtab->sh_type == SHT_STRTAB)
+				set_section(elf, &elf->shstrtab, shstrtab);
+
 			// Recorrer headers y añadir referencias
 			for (int i = 0; i < ehdr->e_shnum; ++i) {
-				if (shdr[i].sh_type == SHT_SYMTAB) {
-					if (!elf->symtab.exists || shdr[i].sh_size > 0) {
+
+				if (!g_nm.options.dynamic && shdr[i].sh_type == SHT_SYMTAB) {
+					if (!elf->symtab.exists && shdr[i].sh_size > 0) {
 						set_section(elf, &elf->symtab, &shdr[i]);
-						if (shdr[i].sh_link < ehdr->e_shnum) {
-							set_section(elf, &elf->strtab, &shdr[shdr[i].sh_link]);
+						if (shdr[i].sh_link > 0 && shdr[i].sh_link < ehdr->e_shnum) {
+							if (shdr[shdr[i].sh_link].sh_type == SHT_STRTAB)
+								set_section(elf, &elf->strtab, &shdr[shdr[i].sh_link]);
 						}
 					}
 				}
-				if (shdr[i].sh_type == SHT_DYNSYM) {
-					if (!elf->dynsym.exists || shdr[i].sh_size > 0) {
+
+				if (g_nm.options.dynamic && shdr[i].sh_type == SHT_DYNSYM) {
+					if (!elf->dynsym.exists && shdr[i].sh_size > 0) {
 						set_section(elf, &elf->dynsym, &shdr[i]);
-						if (shdr[i].sh_link < ehdr->e_shnum) {
-							set_section(elf, &elf->dynstr, &shdr[shdr[i].sh_link]);
+						if (shdr[i].sh_link > 0 && shdr[i].sh_link < ehdr->e_shnum) {
+							if (shdr[shdr[i].sh_link].sh_type == SHT_STRTAB)
+								set_section(elf, &elf->dynstr, &shdr[shdr[i].sh_link]);
 						}
 					}
 				}
+
 			}
 
 			return (0);
 		}
 
-		if (elf->bits == 64) {
+	#pragma endregion
+
+	#pragma region "64 Bits"
+
+		static int load_section_64(t_elf *elf) {
 			Elf64_Ehdr *ehdr = (Elf64_Ehdr *)elf->base;
 
 			// Validar que SHT está dentro del archivo mapeado
 			if (ehdr->e_shoff + ehdr->e_shnum * sizeof(Elf64_Shdr) > elf->size) return (TRUNCATED);
 			// Dirección del SHT
 			Elf64_Shdr *shdr = (Elf64_Shdr *)(elf->base + ehdr->e_shoff);
+
 			elf->shdr_offset = ehdr->e_shoff;
 			elf->shdr_num = ehdr->e_shnum;
 
 			// Validar que e_shstrndx está dentro del archivo mapeado
-			if (ehdr->e_shstrndx >= ehdr->e_shnum) return (TRUNCATED);
-			// Dirección de header de .shstrtab
+			if (ehdr->e_shstrndx == SHN_UNDEF || ehdr->e_shstrndx >= ehdr->e_shnum) return (TRUNCATED);
+			// Dirección del header de .shstrtab
 			Elf64_Shdr *shstrtab = &shdr[ehdr->e_shstrndx];
-
 			// Validar que .shstrtab está dentro del archivo mapeado
 			if (shstrtab->sh_offset + shstrtab->sh_size > elf->size) return (TRUNCATED);
 
+			// Añadir referencia a .shstrtab
+			if (shstrtab->sh_type == SHT_STRTAB)
+				set_section(elf, &elf->shstrtab, shstrtab);
+
 			// Recorrer headers y añadir referencias
 			for (int i = 0; i < ehdr->e_shnum; ++i) {
-				if (shdr[i].sh_type == SHT_SYMTAB) {
-					if (!elf->symtab.exists || shdr[i].sh_size > 0) {
+
+				if (!g_nm.options.dynamic && shdr[i].sh_type == SHT_SYMTAB) {
+					if (!elf->symtab.exists && shdr[i].sh_size > 0) {
 						set_section(elf, &elf->symtab, &shdr[i]);
-						if (shdr[i].sh_link < ehdr->e_shnum) {
-							set_section(elf, &elf->strtab, &shdr[shdr[i].sh_link]);
+						if (shdr[i].sh_link > 0 && shdr[i].sh_link < ehdr->e_shnum) {
+							if (shdr[shdr[i].sh_link].sh_type == SHT_STRTAB)
+								set_section(elf, &elf->strtab, &shdr[shdr[i].sh_link]);
 						}
 					}
 				}
-				if (shdr[i].sh_type == SHT_DYNSYM) {
-					if (!elf->dynsym.exists || shdr[i].sh_size > 0) {
+
+				if (g_nm.options.dynamic && shdr[i].sh_type == SHT_DYNSYM) {
+					if (!elf->dynsym.exists && shdr[i].sh_size > 0) {
 						set_section(elf, &elf->dynsym, &shdr[i]);
-						if (shdr[i].sh_link < ehdr->e_shnum) {
-							set_section(elf, &elf->dynstr, &shdr[shdr[i].sh_link]);
+						if (shdr[i].sh_link > 0 && shdr[i].sh_link < ehdr->e_shnum) {
+							if (shdr[shdr[i].sh_link].sh_type == SHT_STRTAB)
+								set_section(elf, &elf->dynstr, &shdr[shdr[i].sh_link]);
 						}
 					}
 				}
+
 			}
 
 			return (0);
 		}
 
-		return (UNRECOGNIZED);
+	#pragma endregion
+
+	int load_sections(t_elf *elf) {
+		int ret = 0;
+
+		if (!ret)						ret = validate(elf);
+		if (!ret && elf->bits == 32)	ret = load_section_32(elf);
+		if (!ret && elf->bits == 64)	ret = load_section_64(elf);
+		
+		return (ret);
 	}
 
 #pragma endregion

@@ -43,6 +43,7 @@
 	typedef struct s_section {
 		uint64_t		sh_offset;			// 
 		uint64_t		sh_size;			// 
+		uintptr_t       base;				// 
 		uint8_t			exists ;			// 
 	} t_section;
 
@@ -50,7 +51,6 @@
 		struct s_file	*file;				// Pointer to the parent file
 		char			*name;				// Member name
 		int				bits;				// Architecture (32/64 bits)
-		uint16_t		type;				// Type of member
 		void			*base;				// Pointer to the member in memory
 		size_t 			size;				// Length of the member
 		t_ferror		error;				// Error for the member
@@ -60,6 +60,7 @@
 		t_section		strtab;				// 
 		t_section		dynsym;				// 
 		t_section		dynstr;				// 
+		t_section		shstrtab;			// 
 		t_sym			*sym;				// List of symbols
 		t_sym			*last_sym;			// Last symbol
 		struct s_elf	*next;				// Next member
@@ -97,7 +98,6 @@
 	int		load_symbols(t_elf *elf);
 
 	// Section
-	int		validate(t_elf *elf);
 	int		load_sections(t_elf *elf);
 
 	// File
