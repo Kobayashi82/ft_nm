@@ -34,3 +34,7 @@ tester/*.txt
 tester/*.bin
 tester/*_out
 tester/*_err
+tester/test1/
+tester/test1/**
+tester/test2/
+tester/test2/**
