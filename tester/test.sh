@@ -1,7 +1,9 @@
 #!/bin/bash
 
+cp ft_nm tester/ft_nm
+cd tester
 ft_nm=./ft_nm
-ft_nm="valgrind --leak-check=full --show-leak-kinds=all --track-fds=yes -q ./ft_nm"
+# ft_nm="valgrind --leak-check=full --show-leak-kinds=all --track-fds=yes -q ./ft_nm"
 TEST_NUM=0
 PASS=0
 FAIL=0
@@ -567,7 +569,7 @@ run_nm -n -r test_foo.o test_bar.o test_baz.o test_debug.o test_weak.o test_many
 # Cleanup
 # ─────────────────────────────────────────────
 
-rm -f test_foo.o test_bar.o test_baz.o test_valid.a test_single.a test_big.a \
+rm -f ft_nm test_foo.o test_bar.o test_baz.o test_valid.a test_single.a test_big.a \
 	test_corrupt_member.a test_random.bin test_text.txt \
 	test_empty.txt test_zero.o test_elf32.o test_shared.so test_weak.o \
 	test_debug.o test_undef.o test_static_syms.o test_many_syms.o \

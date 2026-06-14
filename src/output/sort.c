@@ -5,15 +5,6 @@
 
 #pragma endregion
 
-#pragma region "Is Undefined"
-
-	// Comprueba si el símbolo no está definido
-	static int is_undefined(t_sym *s) {
-		return (s->type == 'U' || s->type == 'u' || s->type == 'w');
-	}
-
-#pragma endregion
-
 #pragma region "Compare"
 
 	// Compara dos símbolos por su nombre

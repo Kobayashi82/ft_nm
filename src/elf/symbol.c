@@ -10,6 +10,17 @@
 
 #pragma endregion
 
+#pragma region "Is Undefined"
+
+	// Comprueba si el símbolo no está definido
+	int is_undefined(t_sym *s) {
+		return (s->type == 'U' || s->type == 'u' || s->type == 'w');
+	}
+
+#pragma endregion
+
+#pragma region "Get Name"
+
 	static char *get_name(const char *str, size_t maxlen) {
 		size_t i = 0;
 		while (i < maxlen && str && str[i]) ++i;
@@ -22,6 +33,9 @@
 		return (name);
 	}
 
+#pragma endregion
+
+#pragma region "Get Type"
 
 	static char get_type(t_elf *elf, void *src_sym) {
 		if (!elf || !src_sym) return ('?');
@@ -33,7 +47,6 @@
 			unsigned char	type = ELF64_ST_TYPE(sym->st_info);
 			int				is_global  = (bind == STB_GLOBAL);
 			int				is_weak    = (bind == STB_WEAK);
-			// int is_default = (ELF64_ST_VISIBILITY(sym->st_other) == STV_DEFAULT);
 
 			// Special shndx values
 			if (sym->st_shndx == SHN_UNDEF)										return (is_weak    ? 'w' : 'U');
@@ -47,6 +60,7 @@
 			}
 
 			// Obtener la seccion de los symbolos
+			Elf32_Ehdr *ehdr = (Elf32_Ehdr *)elf->base;
 			Elf32_Shdr *shdr = (Elf32_Shdr *)(elf->base + elf->shdr_offset);
 			Elf32_Shdr *sec  = &shdr[sym->st_shndx];
 
@@ -54,6 +68,12 @@
 			if (sec->sh_flags   & SHF_EXECINSTR)								return (is_global ? 'T' : 't');
 			if (!(sec->sh_flags & SHF_WRITE) && (sec->sh_flags & SHF_ALLOC))	return (is_global ? 'R' : 'r');
 			if (sec->sh_flags   & SHF_WRITE)									return (is_global ? 'D' : 'd');
+
+			char *shstrtab = (char *)(elf->base + shdr[ehdr->e_shstrndx].sh_offset);
+			char *sec_name = shstrtab + sec->sh_name;
+
+			// Si el nombre de la sección empieza por ".debug" o ".zdebug", es 'N'
+			if (!ft_strncmp(sec_name, ".debug", 6) || !ft_strncmp(sec_name, ".zdebug", 7)) return ('N');
 
 			return (is_global ? 'S' : 'n');
 		}
@@ -65,7 +85,6 @@
 			unsigned char	type = ELF64_ST_TYPE(sym->st_info);
 			int				is_global  = (bind == STB_GLOBAL);
 			int				is_weak    = (bind == STB_WEAK);
-			// int is_default = (ELF64_ST_VISIBILITY(sym->st_other) == STV_DEFAULT);
 			
 			// Special shndx values
 			if (sym->st_shndx == SHN_UNDEF)										return (is_weak    ? 'w' : 'U');
@@ -100,6 +119,10 @@
 		return ('?');
 	}
 
+#pragma endregion
+
+#pragma region "Add"
+
 	static int add_symbol(t_elf *elf, char *name, char type, uint64_t value, int is_section) {
 		if (!elf || !name) return (0);
 
@@ -122,6 +145,10 @@
 
 		return (0);
 	}
+
+#pragma endregion
+
+#pragma region "Load"
 
 	int load_symbols(t_elf *elf) {
 		if (!elf) return (UNRECOGNIZED);
@@ -219,3 +246,5 @@
 
 		return (UNRECOGNIZED);
 	}
+
+#pragma endregion

@@ -35,12 +35,12 @@
 
 #pragma endregion
 
-#pragma region "Member Name"
+#pragma region "Get Name"
 
 	// Extrae el nombre del miembro desde ar_name
 	// Si ar_name empieza por '/' seguido de números, es un nombre largo
 	// En otro caso, elimina espacios finales y el terminador '/'
-	static char *member_name(const char *ar_name, const char *long_names, size_t long_names_size) {
+	static char *get_name(const char *ar_name, const char *long_names, size_t long_names_size) {
 		char	buf[17];
 		int		i = 15;
 
@@ -71,10 +71,10 @@
 
 #pragma endregion
 
-#pragma region "Create Node"
+#pragma region "Add Node"
 
 	// Crea nodo 'ELF'
-	static t_elf *create_node(t_file *file, void *base, size_t size) {
+	static t_elf *add_node(t_file *file, void *base, size_t size) {
 		t_elf *node = malloc(sizeof(t_elf));
 		if (!node) return (NULL);
 		ft_memset(node, 0, sizeof(t_elf));
@@ -95,7 +95,7 @@
 
 #pragma endregion
 
-#pragma region "Parse Archive"
+#pragma region "Parse"
 
 	// Parsea todos los miembros del 'Archive'
 	int parse_archive(t_file *file) {
@@ -143,11 +143,11 @@
 			// Comprobar que queda espacio suficiente para los datos del miembro
 			if (cursor + member_size > end) break;
 
-			name = member_name(hdr->ar_name, long_names, long_names_size);
+			name = get_name(hdr->ar_name, long_names, long_names_size);
 
 			// Saltar miembros especiales (índice de símbolos '/' y tabla de nombres '//')
 			if (!is_special(name)) {
-				node = create_node(file, cursor, member_size);
+				node = add_node(file, cursor, member_size);
 				if (!node) {
 					free(name);
 					ft_dprintf(STDERR_FILENO, NAME": %s: memory allocation failed\n", file->path);

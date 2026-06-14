@@ -17,12 +17,20 @@ doc/ft_nm\ 3.6.pdf
 !src
 !src/**
 
-!tester
-!tester/**
-
 !Makefile
 !.gitignore
 !README.md
 !README_es.md
 !LICENSE
 !leaks
+
+!tester
+!tester/**
+tester/ft_nm
+tester/*.o
+tester/*.a
+tester/*.so
+tester/*.txt
+tester/*.bin
+tester/*_out
+tester/*_err

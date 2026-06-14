@@ -6,7 +6,7 @@
 	#include <stddef.h>
 	#include <stdint.h>
 	
-	#define NAME "ft_nm"
+	#define NAME "nm"
 
 #pragma endregion
 
@@ -93,6 +93,7 @@
 	int		options(int argc, char **argv);
 
 	// Symbols
+	int		is_undefined(t_sym *s);
 	int		load_symbols(t_elf *elf);
 
 	// Section

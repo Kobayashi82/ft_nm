@@ -94,16 +94,25 @@
 
 			// Validar que .shstrtab está dentro del archivo mapeado
 			if (shstrtab->sh_offset + shstrtab->sh_size > elf->size) return (TRUNCATED);
-			// Dirección de la sección .shstrtab
-			char *snames = (char *)(elf->base + shstrtab->sh_offset);
 
 			// Recorrer headers y añadir referencias
 			for (int i = 0; i < ehdr->e_shnum; ++i) {
-				char *name = snames + shdr[i].sh_name;
-				if (shdr[i].sh_type == SHT_SYMTAB   && !elf->symtab.exists)	set_section(elf, &elf->symtab, &shdr[i]);
-				if (shdr[i].sh_type == SHT_DYNSYM   && !elf->dynsym.exists)	set_section(elf, &elf->dynsym, &shdr[i]);
-				if (!ft_strncmp(name, ".strtab", 7) && !elf->strtab.exists)	set_section(elf, &elf->strtab, &shdr[i]);
-				if (!ft_strncmp(name, ".dynstr", 7) && !elf->dynstr.exists)	set_section(elf, &elf->dynstr, &shdr[i]);
+				if (shdr[i].sh_type == SHT_SYMTAB) {
+					if (!elf->symtab.exists || shdr[i].sh_size > 0) {
+						set_section(elf, &elf->symtab, &shdr[i]);
+						if (shdr[i].sh_link < ehdr->e_shnum) {
+							set_section(elf, &elf->strtab, &shdr[shdr[i].sh_link]);
+						}
+					}
+				}
+				if (shdr[i].sh_type == SHT_DYNSYM) {
+					if (!elf->dynsym.exists || shdr[i].sh_size > 0) {
+						set_section(elf, &elf->dynsym, &shdr[i]);
+						if (shdr[i].sh_link < ehdr->e_shnum) {
+							set_section(elf, &elf->dynstr, &shdr[shdr[i].sh_link]);
+						}
+					}
+				}
 			}
 
 			return (0);
@@ -126,16 +135,25 @@
 
 			// Validar que .shstrtab está dentro del archivo mapeado
 			if (shstrtab->sh_offset + shstrtab->sh_size > elf->size) return (TRUNCATED);
-			// Dirección de la sección .shstrtab
-			char *snames = (char *)(elf->base + shstrtab->sh_offset);
 
 			// Recorrer headers y añadir referencias
 			for (int i = 0; i < ehdr->e_shnum; ++i) {
-				char *name = snames + shdr[i].sh_name;
-				if (shdr[i].sh_type == SHT_SYMTAB   && !elf->symtab.exists)	set_section(elf, &elf->symtab, &shdr[i]);
-				if (shdr[i].sh_type == SHT_DYNSYM   && !elf->dynsym.exists)	set_section(elf, &elf->dynsym, &shdr[i]);
-				if (!ft_strncmp(name, ".strtab", 7) && !elf->strtab.exists)	set_section(elf, &elf->strtab, &shdr[i]);
-				if (!ft_strncmp(name, ".dynstr", 7) && !elf->dynstr.exists)	set_section(elf, &elf->dynstr, &shdr[i]);
+				if (shdr[i].sh_type == SHT_SYMTAB) {
+					if (!elf->symtab.exists || shdr[i].sh_size > 0) {
+						set_section(elf, &elf->symtab, &shdr[i]);
+						if (shdr[i].sh_link < ehdr->e_shnum) {
+							set_section(elf, &elf->strtab, &shdr[shdr[i].sh_link]);
+						}
+					}
+				}
+				if (shdr[i].sh_type == SHT_DYNSYM) {
+					if (!elf->dynsym.exists || shdr[i].sh_size > 0) {
+						set_section(elf, &elf->dynsym, &shdr[i]);
+						if (shdr[i].sh_link < ehdr->e_shnum) {
+							set_section(elf, &elf->dynstr, &shdr[shdr[i].sh_link]);
+						}
+					}
+				}
 			}
 
 			return (0);

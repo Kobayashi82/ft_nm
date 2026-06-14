@@ -92,7 +92,7 @@
 
 #pragma endregion
 
-#pragma region "ft_dprintf"
+#pragma region "dprintf"
 
 	int	ft_dprintf(int fd, char const *format, ...) {
 		va_list	args;

@@ -8,15 +8,6 @@
 
 #pragma endregion
 
-#pragma region "Is Undefined"
-
-	// Comprueba si el símbolo no está definido
-	static int is_undefined(t_sym *s) {
-		return (s->type == 'U' || s->type == 'u' || s->type == 'w');
-	}
-
-#pragma endregion
-
 #pragma region "Filter"
 
 	// Filtra la informacion que se debe imprimir
@@ -120,7 +111,8 @@
 				}
 			} else {
 				switch (member->error) {
-					case TRUNCATED:		{ ft_dprintf(STDERR_FILENO, NAME": %s: file truncated\n",				member->name);	break; }
+					// case TRUNCATED:		{ ft_dprintf(STDERR_FILENO, NAME": %s: file truncated\n",				member->name);	break; }
+					case TRUNCATED:		{ ft_dprintf(STDERR_FILENO, NAME": %s: file format not recognized\n",	member->name);	break; }
 					case UNRECOGNIZED:	{ ft_dprintf(STDERR_FILENO, NAME": %s: file format not recognized\n",	member->name);	break; }
 					case NO_SYMBOLS:	{ ft_dprintf(STDERR_FILENO, NAME": %s: no symbols\n",					member->name);	break; }
 					default:			{ ft_dprintf(STDERR_FILENO, NAME": %s: undefined error\n",				member->name);	break; }
