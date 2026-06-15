@@ -36,3 +36,4 @@ run_nm() {
 }
 
 run_nm "$@"
+rm ft_nm

@@ -38,7 +38,7 @@
 
 		// -a: debug symbols (N type). Without -a, filter them out
 		if (!g_nm.options.debug_syms) {
-    		if (sym->type == 'a' || sym->type == 'N' || !*sym->name || sym->is_section) return (0);
+    		if (sym->type == 'f' || sym->type == 'N' || !*sym->name || sym->is_section) return (0);
 		}
 
 		return (1);
@@ -103,7 +103,7 @@
 							if (member->bits == 64)			ft_dprintf(STDOUT_FILENO, "                ");
 						} else								print_address(symbol->value, member->bits);
 						
-						ft_dprintf(STDOUT_FILENO, " %c ", symbol->type);
+						ft_dprintf(STDOUT_FILENO, " %c ", (symbol->type == 'f') ? 'a' : symbol->type);
 						ft_dprintf(STDOUT_FILENO, "%s\n", symbol->name);
 					}
 

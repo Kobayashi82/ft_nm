@@ -14,7 +14,7 @@
 
 	// Comprueba si el símbolo no está definido
 	int is_undefined(t_sym *s) {
-		return (s->type == 'U' || s->type == 'u' || s->type == 'w');
+		return (s->type == 'U' || s->type == 'u' || s->type == 'w' || s->type == 'v');
 	}
 
 #pragma endregion
@@ -75,11 +75,15 @@
 			int				is_weak    = (bind == STB_WEAK);
 			int				is_unique  = (bind == STB_GNU_UNIQUE);
 
-			if (sym->st_shndx == SHN_UNDEF)										return (is_weak    ? 'w' : 'U');
+			if (sym->st_shndx == SHN_UNDEF) {
+				if (is_weak && type == STT_OBJECT)								return ('v');
+				if (is_weak)													return ('w');
+				return ('U');
+			}
 
 			if (is_unique)														return ('u');
 
-			if (type == STT_FILE)												return ('a');
+			if (type == STT_FILE)												return ('f');
 			if (type == STT_GNU_IFUNC)											return ('i');
 			if (sym->st_shndx == SHN_ABS)										return (is_global  ? 'A' : 'a');
 			if (sym->st_shndx == SHN_COMMON)									return (is_global  ? 'C' : 'c');
@@ -123,11 +127,15 @@
 			int				is_weak    = (bind == STB_WEAK);
 			int				is_unique  = (bind == STB_GNU_UNIQUE);
 
-			if (sym->st_shndx == SHN_UNDEF)										return (is_weak    ? 'w' : 'U');
+			if (sym->st_shndx == SHN_UNDEF) {
+				if (is_weak && type == STT_OBJECT)								return ('v');
+				if (is_weak)													return ('w');
+				return ('U');
+			}
 
 			if (is_unique)														return ('u');
 
-			if (type == STT_FILE)												return ('a');
+			if (type == STT_FILE)												return ('f');
 			if (type == STT_GNU_IFUNC)											return ('i');
 			if (sym->st_shndx == SHN_ABS)										return (is_global  ? 'A' : 'a');
 			if (sym->st_shndx == SHN_COMMON)									return (is_global  ? 'C' : 'c');
@@ -184,7 +192,7 @@
 				if (sym[i].st_name >= sym_str->sh_size) continue;
 				char 		*name = get_name(strings + sym[i].st_name, sym_str->sh_size - sym[i].st_name);
 				char 		type  = get_type(elf, &sym[i]);
-				uint64_t	value = (type == 'U' || type == 'w') ? 0 : sym[i].st_value;
+				uint64_t	value = (type == 'U' || type == 'w' || type == 'v') ? 0 : sym[i].st_value;
 
 				if (!name) return (NO_MEMORY);
 				if (type == '?') {
@@ -259,7 +267,7 @@
 				}
 
 				char 		type  = get_type(elf, &sym[i]);
-				uint64_t	value = (type == 'U' || type == 'w') ? 0 : sym[i].st_value;
+				uint64_t	value = (type == 'U' || type == 'w' || type == 'v') ? 0 : sym[i].st_value;
 
 				if (type == '?') {
 					free(name);

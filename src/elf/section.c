@@ -24,6 +24,9 @@
 		// Little Endian
 		if (ehdr[EI_DATA] != ELFDATA2LSB) return (UNRECOGNIZED);
 
+		// Version
+		if (ehdr[EI_VERSION] != EV_CURRENT ) return (UNRECOGNIZED);
+
 		// Truncado
 		if (elf->bits == 32 && elf->size < sizeof(Elf32_Ehdr)) return (TRUNCATED);
 		if (elf->bits == 64 && elf->size < sizeof(Elf64_Ehdr)) return (TRUNCATED);

@@ -1,5 +1,9 @@
 #!/bin/bash
 
+GREEN='\033[0;32m'
+RED='\033[0;33m'
+NC='\033[0m'
+
 cp ft_nm tester/ft_nm
 cd tester
 ft_nm=./ft_nm
@@ -14,29 +18,30 @@ FAIL=0
 
 run_nm() {
 	TEST_NUM=$((TEST_NUM + 1))
-	local label="TEST $TEST_NUM"
+	local label="$TEST_NUM"
 	[ "$#" -gt 0 ] && label="$label ($*)" || label="$label (no args)"
 
-	$ft_nm "$@" > ft_nm_out 2> ft_nm_err
+	$ft_nm "$@" 2> ft_nm_err | sed 's/@GLIBC_[0-9.]*//g' > ft_nm_out
 	ft_nm_code=$?
-	nm --without-symbol-versions "$@" > nm_out 2> nm_err
+	nm --without-symbol-versions "$@" 2> nm_err | sed 's/@GLIBC_[0-9.]*//g' > nm_out
 	nm_code=$?
 
-	sed -i 's/@GLIBC_[0-9.]*//g' ft_nm_out
-    sed -i 's/@GLIBC_[0-9.]*//g' nm_out
+	local diff_out diff_err
+	diff_out=$(diff ft_nm_out nm_out 2>/dev/null)
+	diff_err=$(diff <(sed 's/ft_nm/nm/g' ft_nm_err) nm_err 2>/dev/null)
 
 	local failed=0
-	diff -q ft_nm_out nm_out > /dev/null 2>&1 || failed=1
-	diff -q <(sed 's/ft_nm/nm/g' ft_nm_err) nm_err > /dev/null 2>&1 || failed=1
+	[ -n "$diff_out" ] && failed=1
+	[ -n "$diff_err" ] && failed=1
 	[ "$ft_nm_code" -ne "$nm_code" ] && failed=1
 
 	if [ "$failed" -eq 0 ]; then
-		echo "$label OK"
+		echo -e "${GREEN}$label${NC}"
 		PASS=$((PASS + 1))
 	else
-		echo "$label FAIL"
-		diff ft_nm_out nm_out
-		diff <(sed 's/ft_nm/nm/g' ft_nm_err) nm_err
+		echo -e "${RED}$label${NC}"
+		[ -n "$diff_out" ] && echo "$diff_out"
+		[ -n "$diff_err" ] && echo "$diff_err"
 		[ "$ft_nm_code" -ne "$nm_code" ] && echo "exit code: $ft_nm_code <> $nm_code"
 		FAIL=$((FAIL + 1))
 	fi
@@ -74,7 +79,7 @@ make_ar_with_corrupt_member() {
 }
 
 cleanup() {
-	rm -f test_foo.o test_bar.o test_baz.o test_valid.a test_single.a test_big.a \
+	rm -f ft_nm test_foo.o test_bar.o test_baz.o test_valid.a test_single.a test_big.a \
 		test_corrupt_member.a test_random.bin test_text.txt \
 		test_empty.txt test_zero.o test_elf32.o test_shared.so test_weak.o \
 		test_debug.o test_undef.o test_static_syms.o test_many_syms.o \
@@ -163,19 +168,22 @@ cc -x c /tmp/_many_syms.c -c -o test_many_syms.o 2>/dev/null
 make_static_lib test_big.a test_foo.o test_bar.o test_baz.o test_debug.o test_weak.o 2>/dev/null
 
 echo "=== Running tests ==="
-echo ""
 
 # ─────────────────────────────────────────────
 # SECTION 1 — Default behavior (no flags)
 # ─────────────────────────────────────────────
 
+echo ""
 echo "--- [1] Default (no flags) ---"
+echo ""
 run_nm
 run_nm ./ft_nm
 run_nm /bin/ls
 run_nm /bin/date
-run_nm /usr/bin/gcc 2>/dev/null || run_nm /usr/bin/cc
+run_nm /usr/bin/gcc
+run_nm /usr/bin/cc
 run_nm test_foo.o
+run_nm -- test_foo.o
 run_nm test_bar.o
 run_nm test_debug.o
 run_nm test_weak.o
@@ -194,6 +202,7 @@ run_nm /usr/lib/x86_64-linux-gnu/libm.a
 
 echo ""
 echo "--- [2] Multiple files, no flags ---"
+echo ""
 run_nm test_foo.o test_bar.o
 run_nm test_foo.o test_bar.o test_baz.o
 run_nm test_foo.o test_valid.a
@@ -211,8 +220,9 @@ run_nm test_big.a /usr/lib/x86_64-linux-gnu/libc.a
 
 echo ""
 echo "--- [3] Invalid / edge-case files ---"
-run_nm noexiste.o
-run_nm /nonexistent/path/file.o
+echo ""
+run_nm missing.o
+run_nm /missing/path/file.o
 run_nm test_text.txt
 run_nm test_empty.txt
 run_nm test_zero.o
@@ -222,6 +232,7 @@ run_nm Makefile
 run_nm src
 run_nm /tmp
 run_nm /dev/null
+run_nm /dev/zero
 
 # ─────────────────────────────────────────────
 # SECTION 4 — Mixed valid + invalid
@@ -229,12 +240,13 @@ run_nm /dev/null
 
 echo ""
 echo "--- [4] Mixed valid + invalid ---"
-run_nm ./ft_nm noexiste.o
-run_nm noexiste.o ./ft_nm
-run_nm test_foo.o noexiste.o test_bar.o
-run_nm test_valid.a noexiste.o
+echo ""
+run_nm ./ft_nm missing.o
+run_nm missing.o ./ft_nm
+run_nm test_foo.o missing.o test_bar.o
+run_nm test_valid.a missing.o
 run_nm ./ft_nm /usr/lib/x86_64-linux-gnu/libc.a Makefile
-run_nm /bin/ls /usr/lib/x86_64-linux-gnu/libm.a noexiste.o src
+run_nm /bin/ls /usr/lib/x86_64-linux-gnu/libm.a missing.o src
 run_nm test_text.txt test_foo.o
 run_nm test_zero.o test_valid.a /bin/ls
 
@@ -244,6 +256,7 @@ run_nm test_zero.o test_valid.a /bin/ls
 
 echo ""
 echo "--- [5] -g / --extern-only ---"
+echo ""
 run_nm -g ./ft_nm
 run_nm -g test_foo.o
 run_nm -g test_debug.o
@@ -256,6 +269,8 @@ run_nm --extern-only ./ft_nm
 run_nm --extern-only test_debug.o
 run_nm -g ./ft_nm /usr/lib/x86_64-linux-gnu/libc.a
 run_nm -g test_foo.o test_bar.o
+run_nm -g
+run_nm -- -g test_foo.o
 
 # ─────────────────────────────────────────────
 # SECTION 6 — Flag: -A / --print-file-name
@@ -263,6 +278,7 @@ run_nm -g test_foo.o test_bar.o
 
 echo ""
 echo "--- [6] -A / --print-file-name ---"
+echo ""
 run_nm -A ./ft_nm
 run_nm -A test_foo.o
 run_nm -A test_debug.o
@@ -270,7 +286,7 @@ run_nm -A test_valid.a
 run_nm -A /usr/lib/x86_64-linux-gnu/libc.a
 run_nm --print-file-name test_foo.o
 run_nm -A ./ft_nm /usr/lib/x86_64-linux-gnu/libc.a /bin/ls
-run_nm -A test_foo.o noexiste.o test_bar.o
+run_nm -A test_foo.o missing.o test_bar.o
 run_nm -A test_valid.a test_single.a
 
 # ─────────────────────────────────────────────
@@ -279,6 +295,7 @@ run_nm -A test_valid.a test_single.a
 
 echo ""
 echo "--- [7] -n / --numeric-sort ---"
+echo ""
 run_nm -n ./ft_nm
 run_nm -n test_foo.o
 run_nm -n test_many_syms.o
@@ -295,6 +312,7 @@ run_nm -n ./ft_nm /usr/lib/x86_64-linux-gnu/libc.a Makefile
 
 echo ""
 echo "--- [8] -r / --reverse-sort ---"
+echo ""
 run_nm -r ./ft_nm
 run_nm -r test_foo.o
 run_nm -r test_many_syms.o
@@ -310,6 +328,7 @@ run_nm -r test_foo.o test_bar.o
 
 echo ""
 echo "--- [9] -u / --undefined-only ---"
+echo ""
 run_nm -u ./ft_nm
 run_nm -u test_foo.o
 run_nm -u test_undef.o
@@ -318,7 +337,7 @@ run_nm -u test_valid.a
 run_nm -u /usr/lib/x86_64-linux-gnu/libc.a
 run_nm --undefined-only test_undef.o
 run_nm -u /usr/lib/x86_64-linux-gnu/libc.a /bin/ls
-run_nm -u test_foo.o noexiste.o
+run_nm -u test_foo.o missing.o
 
 # ─────────────────────────────────────────────
 # SECTION 10 — Flag: -U / --defined-only
@@ -326,6 +345,7 @@ run_nm -u test_foo.o noexiste.o
 
 echo ""
 echo "--- [10] -U / --defined-only ---"
+echo ""
 run_nm -U ./ft_nm
 run_nm -U test_foo.o
 run_nm -U test_undef.o
@@ -341,6 +361,7 @@ run_nm -U test_foo.o test_undef.o
 
 echo ""
 echo "--- [11] -p / --no-sort ---"
+echo ""
 run_nm -p ./ft_nm
 run_nm -p test_foo.o
 run_nm -p test_many_syms.o
@@ -356,6 +377,7 @@ run_nm -p test_foo.o test_bar.o
 
 echo ""
 echo "--- [12] -a / --debug-syms ---"
+echo ""
 run_nm -a ./ft_nm
 run_nm -a test_foo.o
 run_nm -a test_debug.o
@@ -370,13 +392,17 @@ run_nm -a test_foo.o test_bar.o
 
 echo ""
 echo "--- [13] -D / --dynamic ---"
+echo ""
 run_nm -D ./ft_nm
 run_nm -D /bin/ls
-run_nm -D /usr/lib/x86_64-linux-gnu/libc.so.6 2>/dev/null || true
-run_nm -D test_shared.so 2>/dev/null
+run_nm -D /usr/lib/x86_64-linux-gnu/libc.so.6
+run_nm -D test_shared.so
 run_nm --dynamic /bin/ls
 run_nm -D test_foo.o          # Static object — should show nothing or error
 run_nm -D test_valid.a        # Archive — undefined behavior on most nm
+run_nm -D -u /bin/ls
+run_nm -D -g /bin/ls
+run_nm -D -n /bin/ls
 
 # ─────────────────────────────────────────────
 # SECTION 14 — Flag: -W / --no-weak
@@ -384,6 +410,7 @@ run_nm -D test_valid.a        # Archive — undefined behavior on most nm
 
 echo ""
 echo "--- [14] -W / --no-weak ---"
+echo ""
 run_nm -W test_weak.o
 run_nm -W ./ft_nm
 run_nm -W test_foo.o
@@ -398,6 +425,7 @@ run_nm -W test_weak.o test_foo.o
 
 echo ""
 echo "--- [15] Flag combinations (2 flags) ---"
+echo ""
 run_nm -g -u ./ft_nm
 run_nm -g -n test_debug.o
 run_nm -g -r test_debug.o
@@ -428,6 +456,7 @@ run_nm -W -n test_weak.o
 
 echo ""
 echo "--- [16] Flag combinations (3 flags) ---"
+echo ""
 run_nm -r -n ./ft_nm /usr/lib/x86_64-linux-gnu/libc.a
 run_nm -g -n -r test_debug.o
 run_nm -g -n -A test_valid.a
@@ -449,6 +478,7 @@ run_nm -n -r -A test_many_syms.o
 
 echo ""
 echo "--- [17] Flag combinations (4+ flags) ---"
+echo ""
 run_nm -g -n -r -A test_debug.o
 run_nm -a -g -n -A test_debug.o
 run_nm -W -g -n -A test_weak.o
@@ -463,6 +493,7 @@ run_nm -W -g -n -r -A test_weak.o
 
 echo ""
 echo "--- [18] Long flags ---"
+echo ""
 run_nm --extern-only --numeric-sort test_debug.o
 run_nm --extern-only --reverse-sort test_debug.o
 run_nm --extern-only --print-file-name test_debug.o
@@ -480,12 +511,13 @@ run_nm --extern-only --numeric-sort --print-file-name test_valid.a
 
 echo ""
 echo "--- [19] Corrupt files + flags ---"
+echo ""
 run_nm -u test_corrupt_member.a
 run_nm -g test_random.bin
 run_nm -A test_text.txt
 run_nm -g test_zero.o
-run_nm -n noexiste.o
-run_nm -A noexiste.o
+run_nm -n missing.o
+run_nm -A missing.o
 run_nm -g test_empty.txt
 
 # ─────────────────────────────────────────────
@@ -494,6 +526,7 @@ run_nm -g test_empty.txt
 
 echo ""
 echo "--- [20] .a + multiple files + flags ---"
+echo ""
 run_nm -g ./ft_nm /usr/lib/x86_64-linux-gnu/libc.a
 run_nm -A ./ft_nm /usr/lib/x86_64-linux-gnu/libc.a /bin/ls
 run_nm -n ./ft_nm /usr/lib/x86_64-linux-gnu/libc.a Makefile
@@ -511,6 +544,7 @@ run_nm -g -n -A test_valid.a /usr/lib/x86_64-linux-gnu/libc.a
 
 echo ""
 echo "--- [21] 32-bit ELF ---"
+echo ""
 run_nm test_elf32.o
 run_nm -g test_elf32.o
 run_nm -n test_elf32.o
@@ -523,12 +557,14 @@ run_nm -u test_elf32.o
 
 echo ""
 echo "--- [22] Shared objects ---"
+echo ""
 run_nm test_shared.so
 run_nm -D test_shared.so
 run_nm -g test_shared.so
 run_nm -u test_shared.so
 run_nm -A test_shared.so
-run_nm -D /lib/x86_64-linux-gnu/libc.so.6 2>/dev/null || run_nm -D /usr/lib/x86_64-linux-gnu/libc.so.6 2>/dev/null
+run_nm -D /lib/x86_64-linux-gnu/libc.so.6
+run_nm -D /usr/lib/x86_64-linux-gnu/libc.so.6
 
 # ─────────────────────────────────────────────
 # SECTION 23 — Repeated flags (should not crash)
@@ -536,6 +572,7 @@ run_nm -D /lib/x86_64-linux-gnu/libc.so.6 2>/dev/null || run_nm -D /usr/lib/x86_
 
 echo ""
 echo "--- [23] Repeated flags ---"
+echo ""
 run_nm -g -g test_foo.o
 run_nm -n -n test_foo.o
 run_nm -r -r test_foo.o
@@ -549,6 +586,7 @@ run_nm -g -g -n -n test_debug.o
 
 echo ""
 echo "--- [24] Conflicting / override flags ---"
+echo ""
 run_nm -u -U test_debug.o      # undefined-only vs defined-only
 run_nm -n -p test_many_syms.o  # numeric-sort vs no-sort
 run_nm -r -p test_many_syms.o  # reverse-sort vs no-sort
@@ -559,6 +597,7 @@ run_nm -r -p test_many_syms.o  # reverse-sort vs no-sort
 
 echo ""
 echo "--- [25] Many files at once ---"
+echo ""
 run_nm test_foo.o test_bar.o test_baz.o test_debug.o test_weak.o test_undef.o test_static_syms.o test_many_syms.o
 run_nm -g test_foo.o test_bar.o test_baz.o test_debug.o test_weak.o test_undef.o test_many_syms.o
 run_nm -A test_foo.o test_bar.o test_baz.o test_debug.o test_weak.o test_undef.o test_many_syms.o
@@ -577,4 +616,4 @@ rm -f ft_nm test_foo.o test_bar.o test_baz.o test_valid.a test_single.a test_big
 	/tmp/_weak_src.c /tmp/_debug_src.c /tmp/_undef_src.c /tmp/_static_src.c /tmp/_many_syms.c
 
 echo ""
-echo "=== Results: $PASS passed, $FAIL failed / $TEST_NUM total ==="
+echo -e "=== ${GREEN}$PASS passed${NC}, ${RED}$FAIL failed${NC} $TEST_NUM total ==="
