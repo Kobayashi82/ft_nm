@@ -6,7 +6,7 @@
 	#include <stddef.h>
 	#include <stdint.h>
 	
-	#define NAME "nm"
+	#define NAME "ft_nm"
 
 #pragma endregion
 
