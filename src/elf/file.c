@@ -84,7 +84,6 @@
 		file->size = st.st_size;
 		file->base = mmap(NULL, file->size, PROT_READ, MAP_PRIVATE, fd, 0);
 		if (file->base == MAP_FAILED) {
-			// ft_dprintf(STDERR_FILENO, NAME": %s: %s\n", file->path, strerror(errno));
 			close(fd);
 			return (1);
 		}

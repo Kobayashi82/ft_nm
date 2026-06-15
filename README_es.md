@@ -137,6 +137,78 @@ Los símbolos se ordenan usando `merge sort`.
 - **Inverso** (`-r`): invierte el resultado del criterio activo
 - **Sin orden** (`-p`): omite la ordenación y preserva el orden de la tabla de símbolos
 
+## Estructura ELF
+
+```text
+┌────────────────────────┬───────────────────────────────────────────────────┐
+│         Offset         │                     Contenido                     │
+├────────────────────────┼───────────────────────────────────────────────────┤
+│                        │ ELF HEADER                                        │
+│ 0x00                   │   Magic:      0x7f 'E' 'L' 'F'                    │
+│                        │   e_ident:    clase (32/64), endianness, OS ABI   │
+│                        │   e_type:     ET_EXEC / ET_DYN / ET_REL           │
+│                        │   e_machine:  EM_X86_64, EM_ARM...                │
+│                        │   e_entry:    punto de entrada (virtual addr)     │
+│                        │   e_phoff:    offset → Program Header Table       │
+│                        │   e_shoff:    offset → Section Header Table       │
+│                        │   e_shstrndx: índice de .shstrtab en la SHT       │
+├────────────────────────┼───────────────────────────────────────────────────┤
+│                        │ PROGRAM HEADER TABLE                              │
+│ e_phoff                │   Describe segmentos en memoria                   │
+│                        │   PT_LOAD, PT_DYNAMIC, PT_INTERP...               │
+│                        │   p_offset, p_vaddr, p_filesz, p_memsz            │
+│                        │   p_flags: R / W / X                              │
+├────────────────────────┼───────────────────────────────────────────────────┤
+│                        │ .text                                             │
+│                        │   Código máquina ejecutable                       │
+│                        │   SHT_PROGBITS | SHF_ALLOC | SHF_EXECINSTR        │
+│                        ├───────────────────────────────────────────────────┤
+│                        │ .rodata                                           │
+│                        │   Datos de solo lectura (literales, constantes)   │
+│                        │   SHT_PROGBITS | SHF_ALLOC                        │
+│                        ├───────────────────────────────────────────────────┤
+│                        │ .data                                             │
+│                        │   Variables globales y estáticas inicializadas    │
+│                        │   SHT_PROGBITS | SHF_ALLOC | SHF_WRITE            │
+│                        ├───────────────────────────────────────────────────┤
+│                        │ .bss                                              │
+│                        │   Variables globales y estáticas sin inicializar  │
+│                        │   SHT_NOBITS — 0 bytes en disco, se zeroan al     │
+│                        │   cargar en memoria                               │
+│                        ├───────────────────────────────────────────────────┤
+│                        │ .symtab                                           │
+│                        │   Tabla de símbolos (ausente si stripped)         │
+│        SECTIONS        │   Elf64_Sym: st_name, st_value, st_size,          │
+│                        │              st_info (type+bind), st_shndx        │
+│                        ├───────────────────────────────────────────────────┤
+│                        │ .strtab                                           │
+│                        │   Strings de nombres de símbolos (null-term)      │
+│                        │   Indexado por st_name de cada Elf64_Sym          │
+│                        ├───────────────────────────────────────────────────┤
+│                        │ .rela.text / .rel.text                            │
+│                        │   Entradas de reubicación para el linker          │
+│                        │   r_offset, r_info (sym + type), r_addend         │
+│                        ├───────────────────────────────────────────────────┤
+│                        │ .dynamic                                          │
+│                        │   Solo en shared libs / PIE                       │
+│                        │   DT_NEEDED, DT_RPATH, DT_SYMTAB...               │
+│                        ├───────────────────────────────────────────────────┤
+│                        │ .got / .plt                                       │
+│                        │   Global Offset Table + Procedure Linkage Table   │
+│                        │   Lazy binding de símbolos externos en runtime    │
+│                        ├───────────────────────────────────────────────────┤
+│                        │ .shstrtab                                         │
+│                        │   Strings de nombres de secciones (null-term)     │
+│                        │   e_shstrndx apunta a esta sección                │
+├────────────────────────┼───────────────────────────────────────────────────┤
+│                        │ SECTION HEADER TABLE                              │
+│ e_shoff                │   Una Elf64_Shdr por cada sección                 │
+│                        │   sh_name, sh_type, sh_flags, sh_addr,            │
+│                        │   sh_offset, sh_size, sh_link, sh_info,           │
+│                        │   sh_addralign, sh_entsize                        │
+└────────────────────────┴───────────────────────────────────────────────────┘
+```
+
 ## 📄 Licencia
 
 Este proyecto está bajo la licencia WTFPL – [Do What the Fuck You Want to Public License](http://www.wtfpl.net/about/).

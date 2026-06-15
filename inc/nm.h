@@ -20,64 +20,64 @@
 #pragma region "Structures"
 
 	typedef struct s_options {
-		int				debug_syms;    		// -a - Display all symbols, including debugging symbols
-		int				print_filename;		// -A - Print the name of the input file with each symbol
-		int				dynamic;       		// -D - Display dynamic symbols only
-		int				extern_only;   		// -g - Display only external (global) symbols
-		int				numeric_sort;  		// -n - Sort numerically by address/value
-		int				no_sort;       		// -p - Do not sort symbols (preserve order)
-		int				reverse_sort;  		// -r - Reverse the sort order
-		int				undefined_only;		// -u - Display only undefined symbols
-		int				defined_only;  		// -U - Display only defined symbols
-		int				no_weak;       		// -W - Do not display weak symbols
+		int				debug_syms;    		// -a - Muestra todos los símbolos, incluidos los símbolos de depuración
+		int				print_filename;		// -A - Imprime el nombre del archivo de entrada junto a cada símbolo
+		int				dynamic;       		// -D - Muestra únicamente los símbolos dinámicos
+		int				extern_only;   		// -g - Muestra únicamente los símbolos externos (globales)
+		int				numeric_sort;  		// -n - Ordena numéricamente por dirección/valor
+		int				no_sort;       		// -p - No ordena los símbolos (preserva el orden original)
+		int				reverse_sort;  		// -r - Invierte el orden de la ordenación
+		int				undefined_only;		// -u - Muestra únicamente los símbolos no definidos
+		int				defined_only;  		// -U - Muestra únicamente los símbolos definidos
+		int				no_weak;       		// -W - No muestra los símbolos débiles (weak)
 	} t_options;
 
 	typedef struct s_sym {
-		char			type;				// Symbol type
-		char			*name;				// Symbol name
-		uint64_t		value;				// Symbol pointer
-		int				is_section;			// Is a section name
-		struct s_sym	*next;				// Next symbol
+		char			type;				// Tipo de símbolo
+		char			*name;				// Nombre del símbolo
+		uint64_t		value;				// Puntero/Valor del símbolo
+		int				is_section;			// Indica si es el nombre de una sección
+		struct s_sym	*next;				// Siguiente símbolo
 	} t_sym;
 
 	typedef struct s_section {
-		uint64_t		sh_offset;			// 
-		uint64_t		sh_size;			// 
-		uintptr_t       base;				// 
-		uint8_t			exists ;			// 
+		uint64_t		sh_offset;			// Offset de la sección
+		uint64_t		sh_size;			// Tamaño de la sección
+		uintptr_t       base;				// Puntero a la sección en memoria
+		uint8_t			exists ;			// Indica si la sección existe en el archivo
 	} t_section;
 
 	typedef struct s_elf {
-		struct s_file	*file;				// Pointer to the parent file
-		char			*name;				// Member name
-		int				bits;				// Architecture (32/64 bits)
-		void			*base;				// Pointer to the member in memory
-		size_t 			size;				// Length of the member
-		t_ferror		error;				// Error for the member
-		uint64_t		shdr_offset;		// Offset of SHT
-    	uint16_t		shdr_num;			// Number of sections
-		t_section		symtab;				// 
-		t_section		strtab;				// 
-		t_section		dynsym;				// 
-		t_section		dynstr;				// 
-		t_section		shstrtab;			// 
-		t_sym			*sym;				// List of symbols
-		t_sym			*last_sym;			// Last symbol
-		struct s_elf	*next;				// Next member
+		struct s_file	*file;				// Puntero al archivo
+		char			*name;				// Nombre del miembro (archivo u objeto dentro del archive)
+		int				bits;				// Arquitectura (32/64 bits)
+		void			*base;				// Puntero al miembro en memoria
+		size_t 			size;				// Longitud del miembro
+		t_ferror		error;				// Error asociado al miembro
+		uint64_t		shdr_offset;		// Offset de la Tabla de Cabeceras de Secciones (SHT)
+    	uint16_t		shdr_num;			// Número de secciones
+		t_section		symtab;				// Sección .symtab (tabla de símbolos)
+		t_section		strtab;				// Sección .strtab (tabla de cadenas)
+		t_section		dynsym;				// Sección .dynsym (tabla de símbolos dinámicos)
+		t_section		dynstr;				// Sección .dynstr (tabla de cadenas dinámicas)
+		t_section		shstrtab;			// Sección .shstrtab (tabla de cadenas de nombres de secciones)
+		t_sym			*sym;				// Lista de símbolos
+		t_sym			*last_sym;			// Último símbolo de la lista
+		struct s_elf	*next;				// Siguiente miembro
 	} t_elf;
 
 	typedef struct s_file {
-		char			*path;				// Path of the file
-		t_ftype			type;				// Archive or elf
-		void			*base;				// Pointer to the file in memory
-		size_t 			size;				// Length of the file
-		t_elf			*elf;				// ELF content
+		char			*path;				// Ruta del archivo
+		t_ftype			type;				// Tipo de archivo (Archive o ELF)
+		void			*base;				// Puntero al archivo mapeado en memoria
+		size_t 			size;				// Longitud total del archivo
+		t_elf			*elf;				// Contenido ELF asociado
 	} t_file;
 
 	typedef struct s_nm {
-		t_file			*file;				// Array of files
-		int				file_total;			// Total of files
-		t_options		options;			// Options
+		t_file			*file;				// Archivos a procesar
+		int				file_total;			// Total de archivos
+		t_options		options;			// Opciones de configuración
 	} t_nm;
 
 #pragma endregion

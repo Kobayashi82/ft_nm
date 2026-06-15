@@ -101,7 +101,7 @@
 			if (!(sec->sh_flags & SHF_WRITE) && (sec->sh_flags & SHF_ALLOC))	return (is_global ? 'R' : 'r');
 			if (sec->sh_flags   & SHF_WRITE)									return (is_global ? 'D' : 'd');
 
-			// Si el nombre de la sección es de debug
+			// Comprobar si el nombre de la sección es de debug
 			char *sec_name = (char *)(elf->shstrtab.base) + sec->sh_name;
 			if (!ft_strncmp(sec_name, ".debug", 6))								return ('N');
 			if (!ft_strncmp(sec_name, ".zdebug", 7))							return ('N');
@@ -153,7 +153,7 @@
 			if (!(sec->sh_flags & SHF_WRITE) && (sec->sh_flags & SHF_ALLOC))	return (is_global ? 'R' : 'r');
 			if (sec->sh_flags   & SHF_WRITE)									return (is_global ? 'D' : 'd');
 
-			// Si el nombre de la sección es de debug
+			// Comprobar si el nombre de la sección es de debug
 			char *sec_name = (char *)(elf->shstrtab.base) + sec->sh_name;
 			if (!ft_strncmp(sec_name, ".debug", 6))								return ('N');
 			if (!ft_strncmp(sec_name, ".zdebug", 7))							return ('N');
@@ -185,33 +185,46 @@
 			size_t sym_total = sym_tab->sh_size / sizeof(Elf32_Sym);
 			if (sym_total < 2) return (0);
 
-			Elf32_Sym *sym = (Elf32_Sym *)(elf->base + sym_tab->sh_offset);
-			char *strings = (char *)(elf->base + sym_str->sh_offset);
-
+			Elf32_Sym *sym = (Elf32_Sym *)sym_tab->base;
+			char *strings  = (char *)sym_str->base;
+				
 			for (size_t i = 1; i < sym_total; ++i) {
+
+				// Salta el símbolo si el Offset del nombre está fuera de los límites de la tabla de cadenas
 				if (sym[i].st_name >= sym_str->sh_size) continue;
-				char 		*name = get_name(strings + sym[i].st_name, sym_str->sh_size - sym[i].st_name);
+
+				int is_section = 0;
+				// Obtiene el nombre del símbolo usando st_name como offset dentro de la tabla de cadenas
+				char *name = get_name(strings + sym[i].st_name, sym_str->sh_size - sym[i].st_name);
+				if (!name) return (NO_MEMORY);
+
+				// Los símbolos de tipo STT_SECTION tienen por convención un st_name vacío, así que se muestran utilizando el nombre de la sección a la que apuntan
+				if (!*name && ELF32_ST_TYPE(sym[i].st_info) == STT_SECTION) {
+					free(name); 
+
+					// st_shndx contiene el índice de la sección a la que hace referencia este símbolo
+					uint16_t shndx = sym[i].st_shndx;
+					if (shndx < elf->shdr_num) {
+						// Obtiene el array de cabeceras de secciones
+						Elf32_Shdr *shdr = (Elf32_Shdr *)(elf->base + elf->shdr_offset);
+
+						// Valida que shstrtab esté cargada y que sh_name esté dentro de sus límites
+						if (!elf->shstrtab.exists || shdr[shndx].sh_name >= elf->shstrtab.sh_size) continue;
+
+						// Obtiene el nombre de la sección usando sh_name como offset dentro de shstrtab
+						char *sec_name = (char *)(elf->shstrtab.base) + shdr[shndx].sh_name;
+						name = ft_strdup(sec_name);
+						if (!name) return (NO_MEMORY);
+						is_section = 1;
+					} else continue;
+				}
+
 				char 		type  = get_type(elf, &sym[i]);
 				uint64_t	value = (type == 'U' || type == 'w' || type == 'v') ? 0 : sym[i].st_value;
 
-				if (!name) return (NO_MEMORY);
 				if (type == '?') {
 					free(name);
 					continue;
-				}
-
-				int is_section = 0;
-				if (*name == '\0' && ELF32_ST_TYPE(sym[i].st_info) == STT_SECTION) {
-					free(name); 
-
-					uint16_t shndx = sym[i].st_shndx;
-					if (shndx < elf->shdr_num) {
-						Elf32_Shdr *shdr = (Elf32_Shdr *)(elf->base + elf->shdr_offset);
-						char *sec_name = (char *)(elf->shstrtab.base) + shdr[shndx].sh_name;
-						name = ft_strdup(sec_name);
-						is_section = 1;
-						if (!name) return (NO_MEMORY);
-					} else continue;
 				}
 
 				if (add_symbol(elf, name, type, value, is_section)) {
@@ -236,29 +249,28 @@
 
 			for (size_t i = 1; i < sym_total; ++i) {
 				
-				// Name
-				// Skip symbol if name offset is out of bounds
+				// Salta el símbolo si el Offset del nombre está fuera de los límites de la tabla de cadenas
 				if (sym[i].st_name >= sym_str->sh_size) continue;
 
 				int is_section = 0;
-				// Get symbol name from string table using st_name as offset
+				// Obtiene el nombre del símbolo usando st_name como offset dentro de la tabla de cadenas
 				char *name = get_name(strings + sym[i].st_name, sym_str->sh_size - sym[i].st_name);
 				if (!name) return (NO_MEMORY);
 
-				// STT_SECTION symbols have an empty st_name by convention so displays them using the name of the section they point to
+				// Los símbolos de tipo STT_SECTION tienen por convención un st_name vacío, así que se muestran utilizando el nombre de la sección a la que apuntan
 				if (!*name && ELF64_ST_TYPE(sym[i].st_info) == STT_SECTION) {
 					free(name); 
 
-					// st_shndx holds the section index this symbol refers to
+					// st_shndx contiene el índice de la sección a la que hace referencia este símbolo
 					uint16_t shndx = sym[i].st_shndx;
 					if (shndx < elf->shdr_num) {
-						// Get section header array
+						// Obtiene el array de cabeceras de secciones
 						Elf64_Shdr *shdr = (Elf64_Shdr *)(elf->base + elf->shdr_offset);
 
-						// Validate that shstrtab is loaded and sh_name is within its bounds
+						// Valida que shstrtab esté cargada y que sh_name esté dentro de sus límites
 						if (!elf->shstrtab.exists || shdr[shndx].sh_name >= elf->shstrtab.sh_size) continue;
 
-						// Get section name from shstrtab using sh_name as offset
+						// Obtiene el nombre de la sección usando sh_name como offset dentro de shstrtab
 						char *sec_name = (char *)(elf->shstrtab.base) + shdr[shndx].sh_name;
 						name = ft_strdup(sec_name);
 						if (!name) return (NO_MEMORY);
