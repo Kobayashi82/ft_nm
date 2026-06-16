@@ -139,6 +139,7 @@ Symbols are sorted using `merge sort`.
 
 ## ELF Structure
 
+```text
 ┌────────────────────────┬───────────────────────────────────────────────────┐
 │         Offset         │                     Content                       │
 ├────────────────────────┼───────────────────────────────────────────────────┤
@@ -206,6 +207,7 @@ Symbols are sorted using `merge sort`.
 │                        │   sh_offset, sh_size, sh_link, sh_info,           │
 │                        │   sh_addralign, sh_entsize                        │
 └────────────────────────┴───────────────────────────────────────────────────┘
+```
 
 ## 📄 License
 
