@@ -14,7 +14,7 @@
 
 	static int help() {
 		char *msg = 
-			"Usage: nm [option(s)] [file(s)]\n"
+			"Usage: "NAME" [option(s)] [file(s)]\n"
 			" List symbols in [file(s)] (a.out by default).\n\n"
 			" The options are:\n"
 			"  -a, --debug-syms       Display debugger-only symbols\n"
@@ -28,7 +28,7 @@
 			"  -U, --defined-only     Display only defined symbols\n"
 			"  -W, --no-weak          Ignore weak symbols\n"
 			"  -h, --help             Display this information\n"
-			"  -V, --version          Display this program's version number\n\n"
+			"  -v, --version          Display this program's version number\n\n"
 
 			"nm: supported targets: elf64-x86-64 elf32-i386\n";
 
@@ -43,7 +43,7 @@
 
 	static int version() {
 		char *msg =
-			"ft_nm 1.0.\n"
+			NAME" 1.0.\n"
 			"Copyright (C) 2026 Kobayashi Corp ⓒ.\n"
 			"This is free software: you are free to change and redistribute it.\n"
 			"There is NO WARRANTY, to the extent permitted by law.\n\n"
@@ -76,7 +76,7 @@
 			{NULL, 0, 0}
 		};
 
-		t_parse_result *result = parse_options(argc, argv, "aADgnpruUWhv", NULL, long_opts, "ft_nm [option(s)] [file(s)]", IGNORE_OFF);
+		t_parse_result *result = parse_options(argc, argv, "aADgnpruUWhv", NULL, long_opts, NAME" [option(s)] [file(s)]", IGNORE_OFF);
 		if (!result) return (free_options(result), 1);
 		if (find_long_option(result, "help")	|| has_option(result, 'h', 0))	return (free_options(result), help());
 		if (find_long_option(result, "version")	|| has_option(result, 'v', 0))	return (free_options(result), version());
@@ -93,7 +93,6 @@
 		g_nm.options.undefined_only	= has_option(result, 'u', 0);
 		g_nm.options.defined_only	= has_option(result, 'U', 0);
 		g_nm.options.no_weak		= has_option(result, 'W', 0);
-
 		
 		t_opt_value *curr = result->options;
 		while (curr != NULL) {
