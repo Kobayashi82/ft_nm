@@ -85,10 +85,6 @@ _compile: $(OBJS)
 	@$(MAKE) -s _progress; printf "\n"
 	@$(MAKE) -s _show_cursor
 
-# 	sudo setcap cap_net_raw+ep $(NAME)
-# 	sudo setcap cap_net_raw,cap_net_admin+ep $(NAME)
-#	sudo setcap -r $(NAME)
-
 # ───────────── #
 # ── OBJECTS ── #
 # ───────────── #
@@ -193,10 +189,10 @@ fclean:
 
 	@$(MAKE) -s _delete_objects
 	@if [ -f $(NAME) ]; then \
-		printf "\t$(CYAN)Deleting... $(YELLOW)library$(NC)"; \
+		printf "\t$(CYAN)Deleting... $(YELLOW)$(NAME)$(NC)"; \
 		rm -f $(NAME); \
 	fi
-	@printf "\r%50s\r\t$(CYAN)Deleted     $(GREEN)✓ $(YELLOW)library$(NC)\n"
+	@printf "\r%50s\r\t$(CYAN)Deleted     $(GREEN)✓ $(YELLOW)$(NAME)$(NC)\n"
 	@find $(BLD_DIR) -type d -empty -delete >/dev/null 2>&1 || true
 	@find  -type d -empty -delete >/dev/null 2>&1 || true
 
