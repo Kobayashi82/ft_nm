@@ -14,7 +14,7 @@
 		const char *ehdr = (const char *)elf->base;
 
 		// Magic Number
-		if (elf->size <= SELFMAG || ft_strncmp(ehdr, ELFMAG, SELFMAG)) return (UNRECOGNIZED);
+		if (elf->size < EI_NIDENT || ft_strncmp(ehdr, ELFMAG, SELFMAG)) return (UNRECOGNIZED);
 
 		// Class
 		if		(ehdr[EI_CLASS] == ELFCLASS32)	elf->bits = 32;
